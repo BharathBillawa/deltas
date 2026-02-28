@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # LLM Configuration
-    google_api_key: str = Field(..., description="Google Gemini API key")
+    google_api_key: str = Field(default="", description="Google Gemini API key (required for LLM operations)")
 
     # Database
     database_url: str = Field(

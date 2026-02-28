@@ -6,7 +6,7 @@ All state changes emit events for loose coupling and audit trail.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -90,83 +90,55 @@ class BaseEvent(BaseModel):
 
 class ClaimReceivedEvent(BaseEvent):
     """Event: New damage claim entered the system."""
-    event_type: EventType = Field(default=EventType.CLAIM_RECEIVED, const=True)
-
-    def __init__(self, **data):
-        data["event_type"] = EventType.CLAIM_RECEIVED
-        super().__init__(**data)
+    event_type: Literal[EventType.CLAIM_RECEIVED] = EventType.CLAIM_RECEIVED
 
 
 class CostEstimatedEvent(BaseEvent):
     """Event: Cost estimation completed for claim."""
-    event_type: EventType = Field(default=EventType.COST_ESTIMATED, const=True)
+    event_type: Literal[EventType.COST_ESTIMATED] = EventType.COST_ESTIMATED
     estimated_cost_eur: float = Field(..., ge=0)
     depreciation_applied: bool = Field(default=False)
-
-    def __init__(self, **data):
-        data["event_type"] = EventType.COST_ESTIMATED
-        super().__init__(**data)
 
 
 class ApprovalRequiredEvent(BaseEvent):
     """Event: Claim requires human approval."""
-    event_type: EventType = Field(default=EventType.APPROVAL_REQUIRED, const=True)
+    event_type: Literal[EventType.APPROVAL_REQUIRED] = EventType.APPROVAL_REQUIRED
     priority: EventPriority = Field(default=EventPriority.HIGH)
     escalation_reason: str
     queue_id: str
 
-    def __init__(self, **data):
-        data["event_type"] = EventType.APPROVAL_REQUIRED
-        super().__init__(**data)
-
 
 class PatternDetectedEvent(BaseEvent):
     """Event: Pattern detected in vehicle or customer history."""
-    event_type: EventType = Field(default=EventType.PATTERN_DETECTED, const=True)
+    event_type: Literal[EventType.PATTERN_DETECTED] = EventType.PATTERN_DETECTED
     priority: EventPriority = Field(default=EventPriority.HIGH)
     pattern_type: str
     pattern_details: str
     severity: str
 
-    def __init__(self, **data):
-        data["event_type"] = EventType.PATTERN_DETECTED
-        super().__init__(**data)
-
 
 class FraudAlertEvent(BaseEvent):
     """Event: Potential fraud detected."""
-    event_type: EventType = Field(default=EventType.FRAUD_ALERT, const=True)
+    event_type: Literal[EventType.FRAUD_ALERT] = EventType.FRAUD_ALERT
     priority: EventPriority = Field(default=EventPriority.CRITICAL)
     fraud_risk_score: float = Field(..., ge=0.0, le=10.0)
     risk_factors: list[str]
 
-    def __init__(self, **data):
-        data["event_type"] = EventType.FRAUD_ALERT
-        super().__init__(**data)
-
 
 class RetirementAlertEvent(BaseEvent):
     """Event: Vehicle retirement should be considered."""
-    event_type: EventType = Field(default=EventType.RETIREMENT_ALERT, const=True)
+    event_type: Literal[EventType.RETIREMENT_ALERT] = EventType.RETIREMENT_ALERT
     priority: EventPriority = Field(default=EventPriority.HIGH)
     recommendation: str
     net_benefit_auction_eur: float
 
-    def __init__(self, **data):
-        data["event_type"] = EventType.RETIREMENT_ALERT
-        super().__init__(**data)
-
 
 class NotificationSentEvent(BaseEvent):
     """Event: Notification sent to stakeholder."""
-    event_type: EventType = Field(default=EventType.NOTIFICATION_SENT, const=True)
+    event_type: Literal[EventType.NOTIFICATION_SENT] = EventType.NOTIFICATION_SENT
     recipient: str
     notification_type: str
     channel: str = Field(..., description="email, sms, webhook, etc.")
-
-    def __init__(self, **data):
-        data["event_type"] = EventType.NOTIFICATION_SENT
-        super().__init__(**data)
 
 
 class EventSubscription(BaseModel):

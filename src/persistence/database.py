@@ -23,9 +23,7 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
-from src.config.settings import get_settings
-
-settings = get_settings()
+from src.config.settings import settings
 
 # Create SQLAlchemy engine
 engine = create_engine(
