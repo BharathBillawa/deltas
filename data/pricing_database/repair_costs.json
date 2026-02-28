@@ -1,0 +1,357 @@
+{
+  "metadata": {
+    "last_updated": "2026-02-28",
+    "currency": "EUR",
+    "market": "Germany",
+    "sources": [
+      "German Insurance Association (GDV) via Dekra, 2024",
+      "Validated average labor rates: €202/hour (mechanical/electrical/bodywork), €220/hour (painting)"
+    ],
+    "notes": "Costs based on validated 2024 German market data"
+  },
+  "labor_rates": {
+    "standard_bodywork": {
+      "rate_per_hour": 202,
+      "description": "Mechanical, electrical, bodywork repairs",
+      "source": "GDV/Dekra 2024 validated average"
+    },
+    "painting": {
+      "rate_per_hour": 220,
+      "description": "Painting work",
+      "source": "GDV/Dekra 2024 validated average"
+    },
+    "specialist_repair": {
+      "rate_per_hour": 245,
+      "description": "Luxury/specialist shops, ADAS calibration",
+      "source": "Market estimate based on GDV data"
+    },
+    "interior_cleaning": {
+      "rate_per_hour": 85,
+      "description": "Professional detailing and interior cleaning",
+      "source": "Market estimate"
+    }
+  },
+  "damage_types": {
+    "scratch": {
+      "minor": {
+        "description": "Small scratch under 10cm, buffing only",
+        "labor_hours_min": 0.5,
+        "labor_hours_max": 1.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 0,
+        "parts_cost_max": 15,
+        "total_cost_range": "100-220 EUR"
+      },
+      "medium": {
+        "description": "Scratch 10-20cm, requires paint touch-up",
+        "labor_hours_min": 1.0,
+        "labor_hours_max": 2.5,
+        "labor_type": "painting",
+        "parts_cost_min": 15,
+        "parts_cost_max": 50,
+        "total_cost_range": "235-600 EUR"
+      },
+      "severe": {
+        "description": "Large scratch over 20cm, extensive repaint",
+        "labor_hours_min": 2.5,
+        "labor_hours_max": 5.0,
+        "labor_type": "painting",
+        "parts_cost_min": 50,
+        "parts_cost_max": 150,
+        "total_cost_range": "600-1250 EUR"
+      }
+    },
+    "dent": {
+      "minor": {
+        "description": "Small dent under 5cm, paintless dent repair (PDR)",
+        "labor_hours_min": 1.0,
+        "labor_hours_max": 2.5,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 0,
+        "parts_cost_max": 25,
+        "total_cost_range": "200-530 EUR"
+      },
+      "medium": {
+        "description": "Dent 5-15cm with paint damage",
+        "labor_hours_min": 2.5,
+        "labor_hours_max": 5.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 25,
+        "parts_cost_max": 80,
+        "total_cost_range": "530-1090 EUR"
+      },
+      "severe": {
+        "description": "Large dent over 15cm, panel replacement",
+        "labor_hours_min": 5.0,
+        "labor_hours_max": 8.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 150,
+        "parts_cost_max": 400,
+        "total_cost_range": "1160-2016 EUR"
+      }
+    },
+    "bumper_crack": {
+      "minor": {
+        "description": "Small crack, repair possible",
+        "labor_hours_min": 2.0,
+        "labor_hours_max": 4.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 50,
+        "parts_cost_max": 120,
+        "total_cost_range": "450-928 EUR"
+      },
+      "medium": {
+        "description": "Moderate crack, bumper replacement",
+        "labor_hours_min": 4.0,
+        "labor_hours_max": 7.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 200,
+        "parts_cost_max": 500,
+        "total_cost_range": "1008-1914 EUR"
+      },
+      "severe": {
+        "description": "Extensive damage with sensor/ADAS impact",
+        "labor_hours_min": 7.0,
+        "labor_hours_max": 12.0,
+        "labor_type": "specialist_repair",
+        "parts_cost_min": 500,
+        "parts_cost_max": 1200,
+        "total_cost_range": "2215-4140 EUR"
+      }
+    },
+    "windshield_crack": {
+      "minor": {
+        "description": "Small chip, repair possible",
+        "labor_hours_min": 0.5,
+        "labor_hours_max": 1.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 30,
+        "parts_cost_max": 60,
+        "total_cost_range": "131-262 EUR"
+      },
+      "medium": {
+        "description": "Crack requiring windshield replacement (standard)",
+        "labor_hours_min": 2.0,
+        "labor_hours_max": 3.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 250,
+        "parts_cost_max": 450,
+        "total_cost_range": "654-1056 EUR"
+      },
+      "high": {
+        "description": "Windshield replacement with ADAS calibration",
+        "labor_hours_min": 3.0,
+        "labor_hours_max": 5.0,
+        "labor_type": "specialist_repair",
+        "parts_cost_min": 450,
+        "parts_cost_max": 800,
+        "total_cost_range": "1185-2025 EUR"
+      }
+    },
+    "interior_stain": {
+      "minor": {
+        "description": "Small stain, standard cleaning",
+        "labor_hours_min": 1.0,
+        "labor_hours_max": 2.0,
+        "labor_type": "interior_cleaning",
+        "parts_cost_min": 20,
+        "parts_cost_max": 50,
+        "total_cost_range": "105-220 EUR"
+      },
+      "medium": {
+        "description": "Large stain, professional deep cleaning",
+        "labor_hours_min": 3.0,
+        "labor_hours_max": 5.0,
+        "labor_type": "interior_cleaning",
+        "parts_cost_min": 50,
+        "parts_cost_max": 120,
+        "total_cost_range": "305-545 EUR"
+      },
+      "severe": {
+        "description": "Extensive damage, upholstery replacement",
+        "labor_hours_min": 6.0,
+        "labor_hours_max": 10.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 300,
+        "parts_cost_max": 800,
+        "total_cost_range": "1512-2820 EUR"
+      }
+    },
+    "mirror_damage": {
+      "minor": {
+        "description": "Mirror glass replacement",
+        "labor_hours_min": 0.5,
+        "labor_hours_max": 1.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 50,
+        "parts_cost_max": 120,
+        "total_cost_range": "151-322 EUR"
+      },
+      "medium": {
+        "description": "Mirror housing replacement (standard)",
+        "labor_hours_min": 1.0,
+        "labor_hours_max": 2.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 120,
+        "parts_cost_max": 250,
+        "total_cost_range": "322-654 EUR"
+      },
+      "severe": {
+        "description": "Complete mirror replacement with sensors/heating",
+        "labor_hours_min": 2.0,
+        "labor_hours_max": 3.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 250,
+        "parts_cost_max": 500,
+        "total_cost_range": "654-1106 EUR"
+      }
+    },
+    "undercarriage": {
+      "minor": {
+        "description": "Minor scraping, cosmetic damage",
+        "labor_hours_min": 1.0,
+        "labor_hours_max": 2.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 20,
+        "parts_cost_max": 60,
+        "total_cost_range": "222-464 EUR"
+      },
+      "medium": {
+        "description": "Undercarriage panel replacement",
+        "labor_hours_min": 2.5,
+        "labor_hours_max": 4.0,
+        "labor_type": "standard_bodywork",
+        "parts_cost_min": 100,
+        "parts_cost_max": 250,
+        "total_cost_range": "605-1058 EUR"
+      },
+      "severe": {
+        "description": "Structural damage requiring inspection",
+        "labor_hours_min": 5.0,
+        "labor_hours_max": 10.0,
+        "labor_type": "specialist_repair",
+        "parts_cost_min": 300,
+        "parts_cost_max": 1000,
+        "total_cost_range": "1525-3450 EUR"
+      }
+    }
+  },
+  "vehicle_category_multipliers": {
+    "Economy": {
+      "multiplier": 1.0,
+      "description": "Base rate for economy vehicles",
+      "examples": ["VW Polo", "Ford Fiesta", "Opel Corsa"]
+    },
+    "Compact": {
+      "multiplier": 1.15,
+      "description": "Compact vehicles, slightly higher parts costs",
+      "examples": ["VW Golf", "Audi A3", "BMW 1 Series"]
+    },
+    "Standard": {
+      "multiplier": 1.35,
+      "description": "Standard sedans, higher quality parts",
+      "examples": ["BMW 3 Series", "Mercedes C-Class", "Audi A4"]
+    },
+    "Luxury": {
+      "multiplier": 1.65,
+      "description": "Luxury vehicles, OEM parts required, higher labor",
+      "examples": ["BMW 5 Series", "Mercedes E-Class", "Audi A6", "Tesla Model 3"],
+      "notes": "GDV data shows BMW owners face highest repair costs"
+    },
+    "Premium": {
+      "multiplier": 2.1,
+      "description": "Premium luxury, specialist shops required",
+      "examples": ["Porsche", "BMW 7 Series", "Mercedes S-Class"]
+    },
+    "SUV": {
+      "multiplier": 1.45,
+      "description": "SUVs, larger panels and higher material costs",
+      "examples": ["BMW X3", "Audi Q5", "Mercedes GLE"]
+    }
+  },
+  "location_risk_profiles": {
+    "Munich_Airport": {
+      "damage_rate_percent": 8.5,
+      "most_common_damage": "door_dings",
+      "average_cost_eur": 285,
+      "cost_multiplier": 1.0,
+      "notes": "High traffic, tight parking, frequent minor damages"
+    },
+    "Berlin_City": {
+      "damage_rate_percent": 5.2,
+      "most_common_damage": "undercarriage",
+      "average_cost_eur": 320,
+      "cost_multiplier": 1.0,
+      "notes": "Urban driving, cobblestones, parking challenges"
+    },
+    "Frankfurt_Suburban": {
+      "damage_rate_percent": 3.1,
+      "most_common_damage": "scratch",
+      "average_cost_eur": 210,
+      "cost_multiplier": 1.0,
+      "notes": "Lower risk location, suburban setting"
+    }
+  },
+  "depreciation_curves": {
+    "bumper": {
+      "year_1": 0.90,
+      "year_2": 0.80,
+      "year_3": 0.70,
+      "year_4": 0.55,
+      "year_5": 0.40,
+      "year_6_plus": 0.25,
+      "description": "Depreciation factor for bumper repairs"
+    },
+    "panel": {
+      "year_1": 0.95,
+      "year_2": 0.85,
+      "year_3": 0.75,
+      "year_4": 0.60,
+      "year_5": 0.45,
+      "year_6_plus": 0.30,
+      "description": "Depreciation factor for body panels"
+    },
+    "interior": {
+      "year_1": 0.85,
+      "year_2": 0.70,
+      "year_3": 0.55,
+      "year_4": 0.40,
+      "year_5": 0.30,
+      "year_6_plus": 0.20,
+      "description": "Depreciation factor for interior components"
+    },
+    "glass": {
+      "year_1": 0.95,
+      "year_2": 0.90,
+      "year_3": 0.85,
+      "year_4": 0.75,
+      "year_5": 0.65,
+      "year_6_plus": 0.50,
+      "description": "Depreciation factor for windshield/glass"
+    },
+    "electronics": {
+      "year_1": 0.80,
+      "year_2": 0.65,
+      "year_3": 0.50,
+      "year_4": 0.35,
+      "year_5": 0.25,
+      "year_6_plus": 0.15,
+      "description": "Depreciation factor for electronic components (ADAS, sensors)"
+    }
+  },
+  "business_rules": {
+    "auto_approve_threshold_eur": 500,
+    "high_cost_threshold_eur": 1000,
+    "retirement_consideration_threshold_eur": 2500,
+    "fraud_detection": {
+      "frequent_damage_days": 90,
+      "frequent_damage_count": 3,
+      "customer_risk_threshold": 2
+    },
+    "insurance_coverage": {
+      "windshield_covered": true,
+      "deductible_eur": 150,
+      "comprehensive_threshold_eur": 1500
+    }
+  }
+}

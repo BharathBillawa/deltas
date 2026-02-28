@@ -1,0 +1,62 @@
+{
+  "scenario_id": "SCENARIO-002",
+  "scenario_name": "Luxury Vehicle Bumper - Human Review Required",
+  "description": "Cracked bumper on luxury vehicle exceeds auto-approve threshold",
+  "expected_outcome": "pending_human_review",
+  "test_type": "threshold_escalation",
+  "damage_claim": {
+    "claim_id": "CLM-2026-002",
+    "timestamp": "2026-02-28T14:15:00Z",
+    "vehicle_id": "AUDI-A6-2019-004",
+    "customer_id": "CUST-7788",
+    "rental_agreement_id": "RNT-2026-0298",
+    "return_location": "Berlin_City",
+    "damage_assessment": {
+      "damage_type": "bumper_crack",
+      "severity": "medium",
+      "location": "front_bumper",
+      "description": "Cracked front bumper requiring replacement, no sensor damage",
+      "affected_parts": ["front_bumper"],
+      "photos": ["damage_002_crack.jpg", "damage_002_front.jpg"],
+      "inspector_id": "INSP-015",
+      "inspector_notes": "Clean crack, bumper replacement needed, no structural damage"
+    }
+  },
+  "vehicle_context": {
+    "category": "Luxury",
+    "year": 2019,
+    "mileage_km": 158000,
+    "previous_damages_count": 3,
+    "last_damage_date": "2026-02-10",
+    "cumulative_damage_ytd_eur": 2845,
+    "health_score": 5.2,
+    "service_up_to_date": true
+  },
+  "customer_context": {
+    "customer_type": "regular",
+    "rental_history_count": 12,
+    "previous_damage_claims": 1,
+    "disputed_claims": 0,
+    "vip_status": false
+  },
+  "expected_cost_estimate": {
+    "base_labor_hours": 5.5,
+    "labor_rate_eur": 202,
+    "base_labor_cost_eur": 1111,
+    "base_parts_cost_eur": 350,
+    "category_multiplier": 1.65,
+    "subtotal_eur": 2411.65,
+    "depreciation_applicable": true,
+    "depreciation_factor": 0.40,
+    "depreciated_value_eur": 964.66,
+    "total_eur": 965
+  },
+  "expected_routing": {
+    "decision": "human_review_required",
+    "reason": "Cost exceeds €500 auto-approve threshold (€965 after depreciation)",
+    "requires_human_review": true,
+    "escalation_reason": "high_cost"
+  },
+  "expected_flags": ["high_cost", "luxury_vehicle", "depreciation_applied"],
+  "notes": "Demonstrates threshold-based routing and depreciation logic for older luxury vehicle"
+}

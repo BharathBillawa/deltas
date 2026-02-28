@@ -1,0 +1,766 @@
+{
+  "fleet_metadata": {
+    "last_updated": "2026-02-28",
+    "total_vehicles": 12,
+    "average_age_years": 3.2,
+    "total_damages_ytd": 15840,
+    "notes": "Realistic German rental fleet with validated cost data (GDV/Dekra 2024)"
+  },
+  "vehicles": [
+    {
+      "vehicle_id": "VW-POLO-2023-001",
+      "category": "Economy",
+      "make": "Volkswagen",
+      "model": "Polo",
+      "year": 2023,
+      "color": "White",
+      "vin": "WVWZZZ6RZE1234567",
+      "license_plate": "M-AB 1234",
+      "purchase_date": "2023-03-15",
+      "purchase_price_eur": 18500,
+      "current_mileage_km": 45000,
+      "last_service_date": "2026-01-10",
+      "service_history": [
+        {
+          "date": "2023-09-15",
+          "type": "oil_change",
+          "cost_eur": 85,
+          "mileage_km": 15000
+        },
+        {
+          "date": "2024-03-20",
+          "type": "tire_rotation",
+          "cost_eur": 45,
+          "mileage_km": 30000
+        },
+        {
+          "date": "2026-01-10",
+          "type": "brake_inspection",
+          "cost_eur": 120,
+          "mileage_km": 44500
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-11-20",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "rear_bumper",
+          "description": "10cm scratch from parking lot incident",
+          "repair_cost_eur": 165,
+          "labor_hours": 0.8,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 3,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-5678",
+          "status": "repaired"
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 78,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 1.3,
+        "avg_rental_days": 5.2
+      },
+      "health_score": 9.2,
+      "notes": "Clean vehicle, good service history, minimal damage"
+    },
+    {
+      "vehicle_id": "BMW-320-2020-002",
+      "category": "Standard",
+      "make": "BMW",
+      "model": "320i",
+      "year": 2020,
+      "color": "Space Gray",
+      "vin": "WBA8E9C51LK123456",
+      "license_plate": "M-CD 5678",
+      "purchase_date": "2020-05-20",
+      "purchase_price_eur": 38000,
+      "current_mileage_km": 125000,
+      "last_service_date": "2025-12-05",
+      "service_history": [
+        {
+          "date": "2024-06-10",
+          "type": "major_service",
+          "cost_eur": 850,
+          "mileage_km": 100000
+        },
+        {
+          "date": "2025-12-05",
+          "type": "oil_change",
+          "cost_eur": 180,
+          "mileage_km": 124000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-10-15",
+          "damage_type": "dent",
+          "severity": "minor",
+          "location": "driver_door",
+          "description": "Small dent, no paint damage, shopping center parking",
+          "repair_cost_eur": 420,
+          "labor_hours": 2.0,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 16,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-3421",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-01-22",
+          "damage_type": "scratch",
+          "severity": "medium",
+          "location": "front_bumper",
+          "description": "15cm scratch with paint damage",
+          "repair_cost_eur": 385,
+          "labor_hours": 1.8,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 21,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-7821",
+          "status": "repaired"
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 156,
+        "rentals_with_damage": 2,
+        "damage_rate_percent": 1.3,
+        "avg_rental_days": 4.8
+      },
+      "health_score": 7.5,
+      "notes": "High mileage, good service, moderate damage history"
+    },
+    {
+      "vehicle_id": "VW-GOLF-2022-003",
+      "category": "Compact",
+      "make": "Volkswagen",
+      "model": "Golf",
+      "year": 2022,
+      "color": "Atlantic Blue",
+      "vin": "WVWZZZ1KZPW123456",
+      "license_plate": "B-EF 9012",
+      "purchase_date": "2022-08-10",
+      "purchase_price_eur": 28500,
+      "current_mileage_km": 68000,
+      "last_service_date": "2026-02-01",
+      "service_history": [
+        {
+          "date": "2023-08-15",
+          "type": "annual_inspection",
+          "cost_eur": 220,
+          "mileage_km": 35000
+        },
+        {
+          "date": "2026-02-01",
+          "type": "oil_change",
+          "cost_eur": 95,
+          "mileage_km": 67500
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-12-10",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "passenger_door",
+          "description": "8cm scratch, buffing only",
+          "repair_cost_eur": 145,
+          "labor_hours": 0.7,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 3,
+          "rental_return_location": "Frankfurt_Suburban",
+          "customer_id": "CUST-1122",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-01-28",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "rear_bumper",
+          "description": "12cm scratch from parking",
+          "repair_cost_eur": 180,
+          "labor_hours": 0.9,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 0,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-3344",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-02-20",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "front_bumper",
+          "description": "10cm scratch, third incident in 75 days",
+          "repair_cost_eur": 210,
+          "labor_hours": 1.0,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 8,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-5566",
+          "status": "pending_review",
+          "flags": ["frequent_damage", "same_location_pattern"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 102,
+        "rentals_with_damage": 3,
+        "damage_rate_percent": 2.9,
+        "avg_rental_days": 5.5
+      },
+      "health_score": 6.8,
+      "notes": "Pattern alert: 3 scratches in 75 days, Munich Airport high-risk"
+    },
+    {
+      "vehicle_id": "AUDI-A6-2019-004",
+      "category": "Luxury",
+      "make": "Audi",
+      "model": "A6 55 TFSI",
+      "year": 2019,
+      "color": "Mythos Black",
+      "vin": "WAUZZZ4G9KN123456",
+      "license_plate": "M-GH 3456",
+      "purchase_date": "2019-06-20",
+      "purchase_price_eur": 62000,
+      "current_mileage_km": 158000,
+      "last_service_date": "2025-11-15",
+      "service_history": [
+        {
+          "date": "2023-06-20",
+          "type": "major_service",
+          "cost_eur": 1250,
+          "mileage_km": 100000
+        },
+        {
+          "date": "2025-11-15",
+          "type": "brake_replacement",
+          "cost_eur": 980,
+          "mileage_km": 156000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-08-12",
+          "damage_type": "bumper_crack",
+          "severity": "medium",
+          "location": "front_bumper",
+          "description": "Cracked front bumper from low-speed collision",
+          "repair_cost_eur": 1240,
+          "labor_hours": 5.5,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 129,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-7788",
+          "status": "repaired",
+          "flags": ["high_cost", "luxury_multiplier"]
+        },
+        {
+          "date": "2025-11-30",
+          "damage_type": "scratch",
+          "severity": "medium",
+          "location": "passenger_door",
+          "description": "Deep scratch requiring repaint",
+          "repair_cost_eur": 685,
+          "labor_hours": 3.2,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 38,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-9900",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-02-10",
+          "damage_type": "dent",
+          "severity": "medium",
+          "location": "rear_quarter_panel",
+          "description": "Dent with paint damage, complex repair",
+          "repair_cost_eur": 920,
+          "labor_hours": 4.3,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 52,
+          "rental_return_location": "Frankfurt_Suburban",
+          "customer_id": "CUST-1234",
+          "status": "repaired"
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 198,
+        "rentals_with_damage": 3,
+        "damage_rate_percent": 1.5,
+        "avg_rental_days": 6.2
+      },
+      "health_score": 5.2,
+      "cumulative_damage_ytd_eur": 2845,
+      "notes": "High mileage luxury vehicle, cumulative damage approaching retirement threshold"
+    },
+    {
+      "vehicle_id": "MERC-E300-2021-005",
+      "category": "Luxury",
+      "make": "Mercedes-Benz",
+      "model": "E 300 d",
+      "year": 2021,
+      "color": "Obsidian Black",
+      "vin": "WDD2130451A123456",
+      "license_plate": "B-IJ 7890",
+      "purchase_date": "2021-04-10",
+      "purchase_price_eur": 58000,
+      "current_mileage_km": 95000,
+      "last_service_date": "2026-01-15",
+      "service_history": [
+        {
+          "date": "2024-04-10",
+          "type": "major_service",
+          "cost_eur": 1150,
+          "mileage_km": 60000
+        },
+        {
+          "date": "2026-01-15",
+          "type": "oil_change",
+          "cost_eur": 220,
+          "mileage_km": 94000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-09-05",
+          "damage_type": "windshield_crack",
+          "severity": "high",
+          "location": "windshield",
+          "description": "Large crack across windshield, rock chip on Autobahn",
+          "repair_cost_eur": 780,
+          "labor_hours": 2.5,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 275,
+          "rental_return_location": "Frankfurt_Suburban",
+          "customer_id": "CUST-4455",
+          "status": "repaired",
+          "insurance_claim": true,
+          "flags": ["insurance_coverage_applied"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 142,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 0.7,
+        "avg_rental_days": 5.8
+      },
+      "health_score": 8.5,
+      "notes": "Excellent condition, single windshield incident covered by insurance"
+    },
+    {
+      "vehicle_id": "BMW-X3-2020-006",
+      "category": "SUV",
+      "make": "BMW",
+      "model": "X3 xDrive30d",
+      "year": 2020,
+      "color": "Alpine White",
+      "vin": "5UXTY3C04L9123456",
+      "license_plate": "M-KL 2345",
+      "purchase_date": "2020-09-15",
+      "purchase_price_eur": 52000,
+      "current_mileage_km": 132000,
+      "last_service_date": "2025-08-20",
+      "service_history": [
+        {
+          "date": "2023-09-15",
+          "type": "major_service",
+          "cost_eur": 1050,
+          "mileage_km": 90000
+        },
+        {
+          "date": "2025-08-20",
+          "type": "tire_replacement",
+          "cost_eur": 720,
+          "mileage_km": 130000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-11-10",
+          "damage_type": "interior_stain",
+          "severity": "medium",
+          "location": "rear_seat",
+          "description": "Large stain on rear seat, strong odor",
+          "repair_cost_eur": 385,
+          "labor_hours": 3.5,
+          "labor_rate_eur": 85,
+          "parts_cost_eur": 88,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-6677",
+          "status": "disputed",
+          "flags": ["customer_dispute", "ambiguous_cause"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 165,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 0.6,
+        "avg_rental_days": 7.2
+      },
+      "health_score": 7.8,
+      "notes": "Service overdue (6 months), disputed interior damage claim"
+    },
+    {
+      "vehicle_id": "FORD-FIESTA-2021-007",
+      "category": "Economy",
+      "make": "Ford",
+      "model": "Fiesta",
+      "year": 2021,
+      "color": "Race Red",
+      "vin": "WF0SXXGAJSLK12345",
+      "license_plate": "B-MN 6789",
+      "purchase_date": "2021-07-20",
+      "purchase_price_eur": 16500,
+      "current_mileage_km": 89000,
+      "last_service_date": "2026-02-05",
+      "service_history": [
+        {
+          "date": "2024-07-20",
+          "type": "annual_inspection",
+          "cost_eur": 180,
+          "mileage_km": 60000
+        },
+        {
+          "date": "2026-02-05",
+          "type": "oil_change",
+          "cost_eur": 75,
+          "mileage_km": 88500
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2026-01-18",
+          "damage_type": "multiple",
+          "severity": "high",
+          "location": "multiple",
+          "description": "Multiple scratches (3 locations) + dent + broken side mirror",
+          "repair_cost_eur": 890,
+          "labor_hours": 4.2,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 42,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-8899",
+          "status": "pending_review",
+          "flags": ["multiple_damages", "potential_not_at_fault", "investigation_needed"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 118,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 0.8,
+        "avg_rental_days": 4.5
+      },
+      "health_score": 6.5,
+      "notes": "Complex damage case with multiple incidents, under investigation"
+    },
+    {
+      "vehicle_id": "AUDI-Q5-2022-008",
+      "category": "SUV",
+      "make": "Audi",
+      "model": "Q5 45 TFSI",
+      "year": 2022,
+      "color": "Navarra Blue",
+      "vin": "WA1L2AFYXJA123456",
+      "license_plate": "M-OP 4567",
+      "purchase_date": "2022-03-10",
+      "purchase_price_eur": 54000,
+      "current_mileage_km": 72000,
+      "last_service_date": "2026-01-20",
+      "service_history": [
+        {
+          "date": "2024-03-10",
+          "type": "major_service",
+          "cost_eur": 950,
+          "mileage_km": 40000
+        },
+        {
+          "date": "2026-01-20",
+          "type": "oil_change",
+          "cost_eur": 185,
+          "mileage_km": 71500
+        }
+      ],
+      "damage_history": [],
+      "rental_history_summary": {
+        "total_rentals": 95,
+        "rentals_with_damage": 0,
+        "damage_rate_percent": 0.0,
+        "avg_rental_days": 6.8
+      },
+      "health_score": 9.5,
+      "notes": "Excellent condition, no damage history, well-maintained"
+    },
+    {
+      "vehicle_id": "BMW-530-2018-009",
+      "category": "Luxury",
+      "make": "BMW",
+      "model": "530i",
+      "year": 2018,
+      "color": "Carbon Black",
+      "vin": "WBA5A5C52JB123456",
+      "license_plate": "B-QR 8901",
+      "purchase_date": "2018-05-15",
+      "purchase_price_eur": 56000,
+      "current_mileage_km": 185000,
+      "last_service_date": "2025-09-10",
+      "service_history": [
+        {
+          "date": "2022-05-15",
+          "type": "major_service",
+          "cost_eur": 1450,
+          "mileage_km": 120000
+        },
+        {
+          "date": "2025-09-10",
+          "type": "brake_replacement",
+          "cost_eur": 1020,
+          "mileage_km": 182000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-07-22",
+          "damage_type": "bumper_crack",
+          "severity": "high",
+          "location": "rear_bumper",
+          "description": "Cracked rear bumper from parking lot collision",
+          "repair_cost_eur": 1450,
+          "labor_hours": 6.5,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 137,
+          "rental_return_location": "Frankfurt_Suburban",
+          "customer_id": "CUST-2233",
+          "status": "repaired"
+        },
+        {
+          "date": "2025-10-05",
+          "damage_type": "dent",
+          "severity": "medium",
+          "location": "driver_door",
+          "description": "Large dent with paint damage",
+          "repair_cost_eur": 825,
+          "labor_hours": 3.8,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 57,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-4466",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-01-15",
+          "damage_type": "scratch",
+          "severity": "medium",
+          "location": "front_bumper",
+          "description": "Deep scratch requiring repaint",
+          "repair_cost_eur": 620,
+          "labor_hours": 2.9,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 34,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-5577",
+          "status": "repaired"
+        },
+        {
+          "date": "2026-02-20",
+          "damage_type": "dent",
+          "severity": "medium",
+          "location": "rear_quarter_panel",
+          "description": "Dent with paint damage, near retirement threshold",
+          "repair_cost_eur": 890,
+          "labor_hours": 4.1,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 62,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-6688",
+          "status": "pending_review",
+          "flags": ["retirement_candidate", "cumulative_damage_high", "vehicle_age"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 245,
+        "rentals_with_damage": 4,
+        "damage_rate_percent": 1.6,
+        "avg_rental_days": 5.2
+      },
+      "health_score": 3.8,
+      "cumulative_damage_ytd_eur": 3785,
+      "depreciation_percent": 68,
+      "notes": "RETIREMENT CANDIDATE: High mileage (185k km), cumulative damage €3785 YTD, 68% depreciated, repair vs auction decision needed"
+    },
+    {
+      "vehicle_id": "MERC-C200-2023-010",
+      "category": "Standard",
+      "make": "Mercedes-Benz",
+      "model": "C 200 d",
+      "year": 2023,
+      "color": "Polar White",
+      "vin": "WDD2050071F123456",
+      "license_plate": "M-ST 5678",
+      "purchase_date": "2023-02-10",
+      "purchase_price_eur": 42000,
+      "current_mileage_km": 52000,
+      "last_service_date": "2026-02-01",
+      "service_history": [
+        {
+          "date": "2024-02-10",
+          "type": "annual_inspection",
+          "cost_eur": 280,
+          "mileage_km": 28000
+        },
+        {
+          "date": "2026-02-01",
+          "type": "oil_change",
+          "cost_eur": 195,
+          "mileage_km": 51500
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2026-02-15",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "rear_bumper",
+          "description": "Small scratch, VIP customer (corporate account)",
+          "repair_cost_eur": 220,
+          "labor_hours": 1.1,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": -2,
+          "rental_return_location": "Frankfurt_Suburban",
+          "customer_id": "CUST-VIP-001",
+          "status": "auto_approved",
+          "flags": ["vip_customer", "corporate_account", "priority_handling"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 68,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 1.5,
+        "avg_rental_days": 6.5
+      },
+      "health_score": 8.8,
+      "notes": "New vehicle, excellent condition, VIP corporate customer handling"
+    },
+    {
+      "vehicle_id": "TESLA-M3-2022-011",
+      "category": "Luxury",
+      "make": "Tesla",
+      "model": "Model 3 Long Range",
+      "year": 2022,
+      "color": "Deep Blue Metallic",
+      "vin": "5YJ3E1EB8MF123456",
+      "license_plate": "B-UV 9012",
+      "purchase_date": "2022-11-10",
+      "purchase_price_eur": 52000,
+      "current_mileage_km": 68000,
+      "last_service_date": "2026-01-10",
+      "service_history": [
+        {
+          "date": "2024-11-10",
+          "type": "battery_inspection",
+          "cost_eur": 150,
+          "mileage_km": 40000
+        },
+        {
+          "date": "2026-01-10",
+          "type": "tire_replacement",
+          "cost_eur": 680,
+          "mileage_km": 67000
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2026-02-25",
+          "damage_type": "bumper_crack",
+          "severity": "high",
+          "location": "front_bumper",
+          "description": "Cracked front bumper with sensor damage (ADAS)",
+          "repair_cost_eur": 1850,
+          "labor_hours": 7.5,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 335,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-7799",
+          "status": "pending_review",
+          "flags": ["ev_vehicle", "adas_sensors", "specialist_repair", "high_cost"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 82,
+        "rentals_with_damage": 1,
+        "damage_rate_percent": 1.2,
+        "avg_rental_days": 5.5
+      },
+      "health_score": 7.2,
+      "notes": "EV vehicle with ADAS sensors, requires specialist repair, high cost claim"
+    },
+    {
+      "vehicle_id": "AUDI-A3-2021-012",
+      "category": "Compact",
+      "make": "Audi",
+      "model": "A3 Sportback 35 TFSI",
+      "year": 2021,
+      "color": "Tango Red",
+      "vin": "WAUZZZ8V6LA123456",
+      "license_plate": "M-WX 3456",
+      "purchase_date": "2021-05-15",
+      "purchase_price_eur": 32000,
+      "current_mileage_km": 98000,
+      "last_service_date": "2026-02-10",
+      "service_history": [
+        {
+          "date": "2024-05-15",
+          "type": "major_service",
+          "cost_eur": 620,
+          "mileage_km": 60000
+        },
+        {
+          "date": "2026-02-10",
+          "type": "oil_change",
+          "cost_eur": 165,
+          "mileage_km": 97500
+        }
+      ],
+      "damage_history": [
+        {
+          "date": "2025-12-01",
+          "damage_type": "scratch",
+          "severity": "minor",
+          "location": "driver_door",
+          "description": "Small scratch, customer has 2 previous claims",
+          "repair_cost_eur": 195,
+          "labor_hours": 0.95,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 3,
+          "rental_return_location": "Berlin_City",
+          "customer_id": "CUST-RISK-001",
+          "status": "repaired",
+          "flags": ["high_risk_customer", "multiple_previous_claims"]
+        },
+        {
+          "date": "2026-01-15",
+          "damage_type": "dent",
+          "severity": "minor",
+          "location": "rear_bumper",
+          "description": "Small dent, same customer second claim in 45 days",
+          "repair_cost_eur": 320,
+          "labor_hours": 1.5,
+          "labor_rate_eur": 202,
+          "parts_cost_eur": 17,
+          "rental_return_location": "Munich_Airport",
+          "customer_id": "CUST-RISK-001",
+          "status": "pending_review",
+          "flags": ["high_risk_customer", "frequent_claims", "fraud_risk"]
+        }
+      ],
+      "rental_history_summary": {
+        "total_rentals": 128,
+        "rentals_with_damage": 2,
+        "damage_rate_percent": 1.6,
+        "avg_rental_days": 5.0
+      },
+      "health_score": 7.0,
+      "notes": "Pattern alert: Customer CUST-RISK-001 has 2 claims in 45 days, fraud risk scoring needed"
+    }
+  ]
+}

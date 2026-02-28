@@ -1,0 +1,86 @@
+{
+  "scenario_id": "SCENARIO-003",
+  "scenario_name": "Pattern Detection - Frequent Damage Alert",
+  "description": "Third scratch in 75 days triggers pattern detection and human review",
+  "expected_outcome": "pending_human_review",
+  "test_type": "pattern_detection",
+  "damage_claim": {
+    "claim_id": "CLM-2026-003",
+    "timestamp": "2026-02-20T16:45:00Z",
+    "vehicle_id": "VW-GOLF-2022-003",
+    "customer_id": "CUST-5566",
+    "rental_agreement_id": "RNT-2026-0312",
+    "return_location": "Munich_Airport",
+    "damage_assessment": {
+      "damage_type": "scratch",
+      "severity": "minor",
+      "location": "front_bumper",
+      "description": "10cm scratch on front bumper, third incident in 75 days",
+      "affected_parts": ["front_bumper"],
+      "photos": ["damage_003_bumper.jpg"],
+      "inspector_id": "INSP-042",
+      "inspector_notes": "Another scratch, same customer return location pattern"
+    }
+  },
+  "vehicle_context": {
+    "category": "Compact",
+    "year": 2022,
+    "mileage_km": 68000,
+    "previous_damages_count": 2,
+    "last_damage_date": "2026-01-28",
+    "days_since_last_damage": 23,
+    "damages_in_last_90_days": 3,
+    "health_score": 6.8,
+    "service_up_to_date": true
+  },
+  "customer_context": {
+    "customer_type": "regular",
+    "rental_history_count": 8,
+    "previous_damage_claims": 0,
+    "disputed_claims": 0,
+    "vip_status": false
+  },
+  "pattern_analysis": {
+    "vehicle_patterns": [
+      {
+        "pattern_type": "frequent_damage",
+        "details": "3 damages in 75 days",
+        "threshold_exceeded": true,
+        "threshold_config": "3 damages in 90 days",
+        "severity": "high"
+      },
+      {
+        "pattern_type": "location_correlation",
+        "details": "All 3 damages at Munich_Airport (high-risk location)",
+        "severity": "medium"
+      }
+    ],
+    "recommendations": [
+      "Consider rotating vehicle out of Munich Airport fleet",
+      "Inspect vehicle for pre-existing cosmetic issues",
+      "Review parking guidance at Munich Airport location"
+    ]
+  },
+  "expected_cost_estimate": {
+    "labor_hours": 1.0,
+    "labor_rate_eur": 202,
+    "labor_cost_eur": 202,
+    "parts_cost_eur": 8,
+    "category_multiplier": 1.15,
+    "subtotal_eur": 241.50,
+    "depreciation_applicable": false,
+    "total_eur": 210
+  },
+  "expected_routing": {
+    "decision": "human_review_required",
+    "reason": "Pattern detected: 3 damages in 75 days, all at same location",
+    "requires_human_review": true,
+    "escalation_reason": "pattern_detected"
+  },
+  "expected_flags": [
+    "frequent_damage",
+    "same_location_pattern",
+    "fleet_management_alert"
+  ],
+  "notes": "Key scenario showcasing pattern recognition as a service - cost is low but patterns matter"
+}

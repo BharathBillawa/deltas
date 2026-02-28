@@ -1,0 +1,58 @@
+{
+  "scenario_id": "SCENARIO-001",
+  "scenario_name": "Minor Scratch - Auto Approve",
+  "description": "Simple scratch under auto-approve threshold, clean vehicle and customer history",
+  "expected_outcome": "auto_approved",
+  "test_type": "happy_path",
+  "damage_claim": {
+    "claim_id": "CLM-2026-001",
+    "timestamp": "2026-02-28T10:30:00Z",
+    "vehicle_id": "VW-POLO-2023-001",
+    "customer_id": "CUST-5678",
+    "rental_agreement_id": "RNT-2026-0234",
+    "return_location": "Munich_Airport",
+    "damage_assessment": {
+      "damage_type": "scratch",
+      "severity": "minor",
+      "location": "rear_bumper",
+      "description": "10cm scratch on rear bumper from parking lot incident",
+      "affected_parts": ["rear_bumper"],
+      "photos": ["damage_001_overview.jpg", "damage_001_detail.jpg"],
+      "inspector_id": "INSP-042",
+      "inspector_notes": "Clean scratch, buffing should be sufficient"
+    }
+  },
+  "vehicle_context": {
+    "category": "Economy",
+    "year": 2023,
+    "mileage_km": 45000,
+    "previous_damages_count": 1,
+    "last_damage_date": "2025-11-20",
+    "health_score": 9.2,
+    "service_up_to_date": true
+  },
+  "customer_context": {
+    "customer_type": "regular",
+    "rental_history_count": 5,
+    "previous_damage_claims": 0,
+    "disputed_claims": 0,
+    "vip_status": false
+  },
+  "expected_cost_estimate": {
+    "labor_hours": 0.8,
+    "labor_rate_eur": 202,
+    "labor_cost_eur": 161.60,
+    "parts_cost_eur": 3,
+    "category_multiplier": 1.0,
+    "subtotal_eur": 164.60,
+    "depreciation_applicable": false,
+    "total_eur": 165
+  },
+  "expected_routing": {
+    "decision": "auto_approve",
+    "reason": "Cost under €500 threshold, clean history, standard damage type",
+    "requires_human_review": false
+  },
+  "expected_flags": [],
+  "notes": "Baseline happy path scenario - should process automatically without issues"
+}

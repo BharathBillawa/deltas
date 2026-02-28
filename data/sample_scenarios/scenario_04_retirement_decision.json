@@ -1,0 +1,100 @@
+{
+  "scenario_id": "SCENARIO-004",
+  "scenario_name": "Retirement Decision - Repair vs Auction",
+  "description": "High mileage luxury vehicle with cumulative damage approaching retirement threshold",
+  "expected_outcome": "retirement_consideration",
+  "test_type": "strategic_decision",
+  "damage_claim": {
+    "claim_id": "CLM-2026-004",
+    "timestamp": "2026-02-20T11:20:00Z",
+    "vehicle_id": "BMW-530-2018-009",
+    "customer_id": "CUST-6688",
+    "rental_agreement_id": "RNT-2026-0285",
+    "return_location": "Berlin_City",
+    "damage_assessment": {
+      "damage_type": "dent",
+      "severity": "medium",
+      "location": "rear_quarter_panel",
+      "description": "Dent with paint damage, complex repair required",
+      "affected_parts": ["rear_quarter_panel"],
+      "photos": ["damage_004_dent.jpg", "damage_004_paint.jpg"],
+      "inspector_id": "INSP-028",
+      "inspector_notes": "Dent on quarter panel, requires panel work and repaint"
+    }
+  },
+  "vehicle_context": {
+    "category": "Luxury",
+    "year": 2018,
+    "age_years": 8,
+    "mileage_km": 185000,
+    "purchase_price_eur": 56000,
+    "current_market_value_eur": 18000,
+    "previous_damages_count": 3,
+    "cumulative_damage_ytd_eur": 2895,
+    "last_damage_date": "2026-01-15",
+    "health_score": 3.8,
+    "depreciation_percent": 68,
+    "service_up_to_date": false,
+    "service_overdue_months": 5
+  },
+  "customer_context": {
+    "customer_type": "regular",
+    "rental_history_count": 15,
+    "previous_damage_claims": 1,
+    "disputed_claims": 0,
+    "vip_status": false
+  },
+  "retirement_analysis": {
+    "current_damage_repair_cost_eur": 890,
+    "cumulative_damage_cost_eur": 3785,
+    "percentage_of_market_value": 21.0,
+    "estimated_auction_value_eur": 15000,
+    "estimated_remaining_rental_life_months": 6,
+    "estimated_monthly_revenue_eur": 1200,
+    "total_potential_revenue_eur": 7200,
+    "repair_plus_service_cost_eur": 1500,
+    "net_benefit_keep_eur": 5700,
+    "net_benefit_auction_eur": 15000,
+    "recommendation": "Consider auction - vehicle has high mileage, poor health score, service overdue",
+    "risk_factors": [
+      "High mileage (185k km)",
+      "Service overdue (5 months)",
+      "Cumulative damage 21% of market value",
+      "Health score 3.8/10 (poor)",
+      "68% depreciated"
+    ]
+  },
+  "expected_cost_estimate": {
+    "base_labor_hours": 4.1,
+    "labor_rate_eur": 202,
+    "base_labor_cost_eur": 828.20,
+    "base_parts_cost_eur": 62,
+    "category_multiplier": 1.65,
+    "subtotal_eur": 1468.83,
+    "depreciation_applicable": true,
+    "depreciation_factor": 0.30,
+    "depreciated_value_eur": 440.65,
+    "additional_costs": {
+      "overdue_service_eur": 600,
+      "estimated_service_description": "Major service overdue"
+    },
+    "total_repair_eur": 441,
+    "total_with_service_eur": 1041
+  },
+  "expected_routing": {
+    "decision": "escalate_to_fleet_management",
+    "reason": "Retirement threshold analysis suggests auction over repair",
+    "requires_human_review": true,
+    "escalation_reason": "retirement_decision_needed",
+    "escalation_stakeholder": "fleet_management_team"
+  },
+  "expected_flags": [
+    "retirement_candidate",
+    "cumulative_damage_high",
+    "vehicle_age",
+    "service_overdue",
+    "poor_health_score",
+    "high_mileage"
+  ],
+  "notes": "Most sophisticated scenario - demonstrates strategic fleet management intelligence beyond tactical claims processing"
+}
