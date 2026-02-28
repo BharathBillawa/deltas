@@ -18,6 +18,14 @@ env/
 # Local context files
 CLAUDE.md
 
+# Internal workflow files (not for public repo)
+.internal/
+
+# Claude and Specstory local files
+.claude/
+.specstory/
+.playwright-mcp/
+
 # Database
 *.db
 *.sqlite
