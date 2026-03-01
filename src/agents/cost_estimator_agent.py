@@ -93,12 +93,17 @@ class CostEstimatorAgent(BaseAgent):
         vehicle_context: Optional[Dict[str, Any]]
     ) -> CostEstimate:
         """Get base cost estimate from deterministic services."""
+        # Get vehicle category from claim context (critical for correct pricing)
+        vehicle_category = "Standard"
+        if claim.vehicle_context:
+            vehicle_category = claim.vehicle_context.category.value
+
         # Calculate base cost
         cost_estimate = self.pricing_service.calculate_cost(
             claim_id=claim.claim_id,
             damage_type=claim.damage_assessment.damage_type,
             severity=claim.damage_assessment.severity,
-            vehicle_category="Standard",  # Default, should get from vehicle context
+            vehicle_category=vehicle_category,
             location=claim.return_location,
             damage_location=claim.damage_assessment.location.value
         )

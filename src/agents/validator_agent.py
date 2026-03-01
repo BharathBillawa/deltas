@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 
 from src.agents.base_agent import BaseAgent
 from src.services.pattern_recognition_service import PatternRecognitionService
-from src.models.damage import DamageClaim
-from src.models.routing import ValidationResult, RoutingDecision, ValidationFlag, FlagSeverity
+from src.models.damage import DamageClaim, VehicleCategory
+from src.models.routing import ValidationResult, RoutingDecision, ValidationFlag, FlagSeverity, EscalationReason
 
 logger = logging.getLogger(__name__)
 
@@ -138,24 +138,80 @@ class ValidatorAgent(BaseAgent):
                 severity=FlagSeverity.WARNING
             ))
 
+        # Business rule: Luxury/Premium vehicle
+        if claim.vehicle_context and claim.vehicle_context.category in [
+            VehicleCategory.LUXURY, VehicleCategory.PREMIUM
+        ]:
+            flags.append(ValidationFlag(
+                flag_type="luxury_vehicle",
+                description=f"{claim.vehicle_context.category.value} vehicle requires additional scrutiny",
+                severity=FlagSeverity.INFO
+            ))
+
+        # Business rule: Low vehicle health
+        if claim.vehicle_context and claim.vehicle_context.health_score is not None and claim.vehicle_context.health_score < 5.0:
+            flags.append(ValidationFlag(
+                flag_type="low_vehicle_health",
+                description=f"Vehicle health score: {claim.vehicle_context.health_score}/10",
+                severity=FlagSeverity.WARNING
+            ))
+
+        # Customer risk analysis
+        customer_risk = self.pattern_service.analyze_customer_risk(claim.customer_id)
+        fraud_risk_score = customer_risk.risk_score if customer_risk else 0.0
+
+        if customer_risk and customer_risk.is_high_risk:
+            flags.append(ValidationFlag(
+                flag_type="high_risk_customer",
+                description=f"Customer risk score: {customer_risk.risk_score}/10",
+                severity=FlagSeverity.HIGH
+            ))
+
+        # Pattern severity increases fraud risk
+        if patterns.get("frequent_damage") or patterns.get("same_damage_type"):
+            fraud_risk_score = min(10.0, fraud_risk_score + 2.0)
+
+        # Overall risk: base fraud risk + flag count
+        overall_risk_score = fraud_risk_score
+        high_flags = len([f for f in flags if f.severity in [FlagSeverity.WARNING, FlagSeverity.HIGH]])
+        overall_risk_score = min(10.0, overall_risk_score + high_flags * 0.5)
+
         # Determine routing
-        if cost_estimate_eur > 500 or patterns.get("frequent_damage"):
-            routing = RoutingDecision.HUMAN_REVIEW_REQUIRED
+        can_auto_approve = True
+        routing_decision = RoutingDecision.AUTO_APPROVE
+        routing_reason = f"Auto-approved: cost €{cost_estimate_eur:.2f} under threshold, no critical patterns"
+        escalation_reason = None
+
+        if cost_estimate_eur > 500:
             can_auto_approve = False
-            routing_reason = f"Requires human review: cost €{cost_estimate_eur:.2f}, patterns detected"
-        else:
-            routing = RoutingDecision.AUTO_APPROVE
-            can_auto_approve = True
-            routing_reason = f"Auto-approved: cost €{cost_estimate_eur:.2f} under threshold, no critical patterns"
+            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
+            routing_reason = f"Cost €{cost_estimate_eur:.2f} exceeds threshold"
+            escalation_reason = EscalationReason.HIGH_COST
+        elif patterns.get("frequent_damage"):
+            can_auto_approve = False
+            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
+            routing_reason = f"Multiple patterns detected"
+            escalation_reason = EscalationReason.PATTERN_DETECTED
+        elif fraud_risk_score >= 7.0:
+            can_auto_approve = False
+            routing_decision = RoutingDecision.INVESTIGATION_REQUIRED
+            routing_reason = f"High fraud risk score: {fraud_risk_score}/10"
+            escalation_reason = EscalationReason.FRAUD_RISK
+        elif customer_risk and customer_risk.is_high_risk:
+            can_auto_approve = False
+            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
+            routing_reason = f"High-risk customer (score: {customer_risk.risk_score}/10)"
+            escalation_reason = EscalationReason.FRAUD_RISK
 
         return ValidationResult(
             claim_id=claim.claim_id,
             is_valid=True,
             can_auto_approve=can_auto_approve,
-            routing_decision=routing,
+            routing_decision=routing_decision,
             routing_reason=routing_reason,
-            fraud_risk_score=patterns.get("fraud_risk_score", 0.0) * 10,  # Scale to 0-10
-            overall_risk_score=patterns.get("fraud_risk_score", 0.0) * 10,
+            escalation_reason=escalation_reason,
+            fraud_risk_score=fraud_risk_score,
+            overall_risk_score=overall_risk_score,
             flags=flags
         )
 
