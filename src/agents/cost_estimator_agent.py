@@ -77,8 +77,8 @@ class CostEstimatorAgent(BaseAgent):
         # Step 3: Get LLM reasoning
         reasoning = self._get_llm_reasoning(claim, base_estimate, vehicle_context)
 
-        # Step 4: Parse LLM response and potentially adjust estimate
-        final_estimate, explanation = self._apply_llm_reasoning(
+        # Step 4: Attach LLM reasoning to the estimate
+        final_estimate, explanation = self._build_reasoning_explanation(
             base_estimate,
             reasoning,
             claim
@@ -231,17 +231,17 @@ Provide your analysis and recommendation in 3-4 sentences."""
         prompt = self._create_prompt(system_prompt, human_prompt)
         return self._invoke_llm(prompt, variables)
 
-    def _apply_llm_reasoning(
+    def _build_reasoning_explanation(
         self,
         base_estimate: CostEstimate,
         reasoning: Optional[str],
         claim: DamageClaim
     ) -> tuple[CostEstimate, Optional[str]]:
         """
-        Apply LLM reasoning to potentially adjust estimate.
+        Build reasoning explanation to attach to the estimate.
 
-        For now, we keep the base estimate but return the reasoning.
-        In production, could parse LLM response to adjust costs.
+        The deterministic estimate is preserved; reasoning provides
+        transparency for reviewers on why the estimate was flagged.
         """
         if not reasoning:
             return base_estimate, None

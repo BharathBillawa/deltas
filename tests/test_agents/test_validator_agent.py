@@ -8,6 +8,8 @@ import pytest
 from datetime import datetime
 from unittest.mock import patch
 
+import json
+
 from src.agents.validator_agent import ValidatorAgent
 from src.models.damage import (
     DamageClaim,
@@ -251,10 +253,10 @@ class TestValidatorLLMTriggering:
 
 
 class TestValidatorLLMOverride:
-    """Tests for LLM routing override logic."""
+    """Tests for LLM routing override logic via structured JSON."""
 
     def test_auto_approve_override(self, agent):
-        """LLM can override human review to auto-approve."""
+        """LLM can override human review to auto-approve via JSON."""
         base = ValidationResult(
             claim_id="TEST",
             is_valid=True,
@@ -262,14 +264,18 @@ class TestValidatorLLMOverride:
             routing_decision=RoutingDecision.HUMAN_REVIEW_REQUIRED,
             routing_reason="Cost exceeds threshold",
         )
-        reasoning = "I recommend auto-approve for this claim based on context."
+        reasoning = json.dumps({
+            "decision": "auto-approve",
+            "reasoning": "Context suggests this is legitimate.",
+            "risk_level": "low"
+        })
         result, explanation = agent._apply_llm_reasoning(base, reasoning, {})
         assert result.can_auto_approve is True
         assert result.routing_decision == RoutingDecision.AUTO_APPROVE
         assert "LLM override" in result.routing_reason
 
     def test_human_review_override(self, agent):
-        """LLM can override auto-approve to human review."""
+        """LLM can override auto-approve to human review via JSON."""
         base = ValidationResult(
             claim_id="TEST",
             is_valid=True,
@@ -277,14 +283,18 @@ class TestValidatorLLMOverride:
             routing_decision=RoutingDecision.AUTO_APPROVE,
             routing_reason="All checks passed",
         )
-        reasoning = "I recommend human review due to suspicious patterns."
+        reasoning = json.dumps({
+            "decision": "human-review",
+            "reasoning": "Suspicious patterns detected.",
+            "risk_level": "high"
+        })
         result, explanation = agent._apply_llm_reasoning(base, reasoning, {})
         assert result.can_auto_approve is False
         assert result.routing_decision == RoutingDecision.HUMAN_REVIEW_REQUIRED
         assert "LLM override" in result.routing_reason
 
-    def test_no_override_without_keywords(self, agent):
-        """LLM response without keywords should not override."""
+    def test_no_override_when_decision_matches(self, agent):
+        """No override when LLM agrees with base decision."""
         base = ValidationResult(
             claim_id="TEST",
             is_valid=True,
@@ -292,9 +302,14 @@ class TestValidatorLLMOverride:
             routing_decision=RoutingDecision.AUTO_APPROVE,
             routing_reason="All checks passed",
         )
-        reasoning = "This claim looks fine. No concerns noted."
+        reasoning = json.dumps({
+            "decision": "auto-approve",
+            "reasoning": "Claim looks fine.",
+            "risk_level": "low"
+        })
         result, explanation = agent._apply_llm_reasoning(base, reasoning, {})
         assert result.routing_decision == RoutingDecision.AUTO_APPROVE
+        assert "LLM override" not in result.routing_reason
 
     def test_none_reasoning_returns_base(self, agent):
         """None reasoning should return base result unchanged."""
@@ -308,6 +323,35 @@ class TestValidatorLLMOverride:
         result, explanation = agent._apply_llm_reasoning(base, None, {})
         assert result == base
         assert explanation is None
+
+    def test_malformed_json_uses_raw_reasoning(self, agent):
+        """Non-JSON LLM response should still return reasoning without override."""
+        base = ValidationResult(
+            claim_id="TEST",
+            is_valid=True,
+            can_auto_approve=True,
+            routing_decision=RoutingDecision.AUTO_APPROVE,
+            routing_reason="All checks passed",
+        )
+        reasoning = "This claim looks fine. No concerns noted."
+        result, explanation = agent._apply_llm_reasoning(base, reasoning, {})
+        assert result.routing_decision == RoutingDecision.AUTO_APPROVE
+        assert explanation is not None
+        assert "This claim looks fine" in explanation
+
+    def test_handles_markdown_code_fences(self, agent):
+        """Should handle LLM responses wrapped in markdown code fences."""
+        base = ValidationResult(
+            claim_id="TEST",
+            is_valid=True,
+            can_auto_approve=False,
+            routing_decision=RoutingDecision.HUMAN_REVIEW_REQUIRED,
+            routing_reason="Cost exceeds threshold",
+        )
+        reasoning = '```json\n{"decision": "auto-approve", "reasoning": "Legitimate claim.", "risk_level": "low"}\n```'
+        result, explanation = agent._apply_llm_reasoning(base, reasoning, {})
+        assert result.can_auto_approve is True
+        assert result.routing_decision == RoutingDecision.AUTO_APPROVE
 
 
 class TestValidatorLLMFallback:
@@ -325,3 +369,41 @@ class TestValidatorLLMFallback:
         """No reasoning history when LLM not used."""
         agent.validate_claim(low_cost_claim, 200.0)
         assert len(agent.reasoning_history) == 0
+
+
+class TestParseLLMDecision:
+    """Tests for structured JSON parsing of LLM responses."""
+
+    def test_valid_json(self, agent):
+        """Should parse valid JSON with required keys."""
+        text = json.dumps({
+            "decision": "auto-approve",
+            "reasoning": "Looks good.",
+            "risk_level": "low"
+        })
+        result = agent._parse_llm_decision(text)
+        assert result is not None
+        assert result["decision"] == "auto-approve"
+
+    def test_json_with_code_fences(self, agent):
+        """Should strip markdown code fences."""
+        text = '```json\n{"decision": "human-review", "reasoning": "Suspicious.", "risk_level": "high"}\n```'
+        result = agent._parse_llm_decision(text)
+        assert result is not None
+        assert result["decision"] == "human-review"
+
+    def test_missing_required_keys(self, agent):
+        """Should return None if required keys are missing."""
+        text = json.dumps({"risk_level": "low"})
+        result = agent._parse_llm_decision(text)
+        assert result is None
+
+    def test_invalid_json(self, agent):
+        """Should return None for non-JSON text."""
+        result = agent._parse_llm_decision("This is not JSON at all.")
+        assert result is None
+
+    def test_empty_string(self, agent):
+        """Should return None for empty string."""
+        result = agent._parse_llm_decision("")
+        assert result is None

@@ -55,7 +55,6 @@ class BaseAgent:
                 model="gemini-3-flash-preview",
                 google_api_key=settings.google_api_key,
                 temperature=self.temperature,
-                convert_system_message_to_human=True,
             )
 
             logger.info(f"Initialized {self.__class__.__name__} with Gemini LLM")

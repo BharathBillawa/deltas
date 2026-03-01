@@ -5,6 +5,7 @@ Wraps PatternRecognitionService with LLM reasoning to handle
 ambiguous patterns and fraud detection.
 """
 
+import json
 import logging
 from typing import Optional, Dict, Any, List
 
@@ -292,7 +293,14 @@ QUESTIONS:
 3. Should this be auto-approved or sent for human review?
 4. What specific concerns or red flags should be noted?
 
-Provide your analysis and recommendation in 3-4 sentences."""
+Respond in this exact JSON format:
+{{
+  "decision": "auto-approve" or "human-review",
+  "reasoning": "your 2-3 sentence analysis",
+  "risk_level": "low" or "medium" or "high"
+}}
+
+Respond ONLY with valid JSON, no other text."""
 
         variables = {
             "vehicle_id": claim.vehicle_id,
@@ -323,20 +331,21 @@ Provide your analysis and recommendation in 3-4 sentences."""
         """
         Apply LLM reasoning to potentially adjust validation decision.
 
-        The LLM can upgrade or downgrade the routing decision based on context.
+        Parses structured JSON from LLM to reliably determine the
+        recommended routing decision.
         """
         if not reasoning:
             return base_result, None
 
-        # Parse reasoning for decision keywords
-        reasoning_lower = reasoning.lower()
+        # Parse structured JSON response from LLM
+        llm_decision = self._parse_llm_decision(reasoning)
 
-        # Check for override signals
-        if "auto-approve" in reasoning_lower and "recommend" in reasoning_lower:
-            # LLM recommends auto-approve despite flags
-            if base_result.routing_decision == RoutingDecision.HUMAN_REVIEW_REQUIRED:
+        if llm_decision:
+            decision = llm_decision.get("decision", "").lower().strip()
+            reasoning_text = llm_decision.get("reasoning", reasoning)
+
+            if decision == "auto-approve" and base_result.routing_decision == RoutingDecision.HUMAN_REVIEW_REQUIRED:
                 logger.info("LLM recommends auto-approve, overriding base decision")
-                # Create new ValidationResult with updated fields
                 base_result = ValidationResult(
                     claim_id=base_result.claim_id,
                     is_valid=base_result.is_valid,
@@ -348,11 +357,8 @@ Provide your analysis and recommendation in 3-4 sentences."""
                     flags=base_result.flags
                 )
 
-        elif "human review" in reasoning_lower and "recommend" in reasoning_lower:
-            # LLM recommends human review
-            if base_result.routing_decision == RoutingDecision.AUTO_APPROVE:
+            elif decision == "human-review" and base_result.routing_decision == RoutingDecision.AUTO_APPROVE:
                 logger.info("LLM recommends human review, overriding base decision")
-                # Create new ValidationResult with updated fields
                 base_result = ValidationResult(
                     claim_id=base_result.claim_id,
                     is_valid=base_result.is_valid,
@@ -364,8 +370,42 @@ Provide your analysis and recommendation in 3-4 sentences."""
                     flags=base_result.flags
                 )
 
-        explanation = f"AI Validation Analysis: {reasoning}"
+            explanation = f"AI Validation Analysis: {reasoning_text}"
+        else:
+            # JSON parsing failed - log warning but still return reasoning as-is
+            logger.warning("Failed to parse structured LLM response, using raw reasoning")
+            explanation = f"AI Validation Analysis: {reasoning}"
 
         logger.info(f"LLM validation reasoning: {reasoning[:100]}...")
 
         return base_result, explanation
+
+    def _parse_llm_decision(self, reasoning: str) -> Optional[Dict[str, str]]:
+        """
+        Parse structured JSON decision from LLM response.
+
+        Handles common LLM quirks: markdown code fences, extra whitespace.
+
+        Returns:
+            Parsed dict with 'decision', 'reasoning', 'risk_level' keys,
+            or None if parsing fails.
+        """
+        text = reasoning.strip()
+
+        # Strip markdown code fences if present
+        if text.startswith("```"):
+            lines = text.split("\n")
+            # Remove first line (```json) and last line (```)
+            lines = [l for l in lines if not l.strip().startswith("```")]
+            text = "\n".join(lines).strip()
+
+        try:
+            parsed = json.loads(text)
+            # Validate expected keys
+            if "decision" in parsed and "reasoning" in parsed:
+                return parsed
+            logger.warning(f"LLM JSON missing required keys: {list(parsed.keys())}")
+            return None
+        except (json.JSONDecodeError, TypeError):
+            logger.warning(f"LLM response is not valid JSON: {text[:100]}")
+            return None
