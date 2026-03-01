@@ -93,8 +93,8 @@ def main():
     print("DAMAGE CLAIM WORKFLOW DEMO")
     print("=" * 70)
 
-    # Initialize workflow
-    workflow = DamageClaimWorkflow(use_checkpointer=False)
+    # Initialize workflow with checkpointer for human-in-the-loop
+    workflow = DamageClaimWorkflow(use_checkpointer=True)
 
     # Find scenarios
     scenarios_dir = Path(__file__).parent.parent / "data" / "sample_scenarios"
@@ -154,6 +154,39 @@ def main():
     print(f"\nTotal scenarios: {len(results)}")
     print(f"Auto-approved: {auto_approved}")
     print(f"Needs review: {needs_review}")
+
+    # Show pending approvals
+    pending = workflow.get_pending_approvals()
+    if pending:
+        print(f"\n{'=' * 70}")
+        print("PENDING APPROVALS (Human-in-the-Loop)")
+        print("=" * 70)
+        for item in pending:
+            print(f"\n  Queue ID: {item['queue_id'][:8]}...")
+            print(f"  Claim: {item['claim_id']}")
+            print(f"  Cost: €{item['estimated_cost_eur']:.2f}")
+            print(f"  Reason: {item['escalation_reason']}")
+            print(f"  Priority: {item['priority']}")
+
+        # Demo: Approve the first pending item
+        if pending:
+            first_pending = pending[0]
+            print(f"\n\n{'=' * 70}")
+            print("DEMO: Resuming workflow after human approval")
+            print("=" * 70)
+            print(f"\nApproving claim {first_pending['claim_id']}...")
+
+            try:
+                result = workflow.resume_after_approval(
+                    claim_id=first_pending['claim_id'],
+                    approved=True,
+                    reviewer_id="DEMO_REVIEWER",
+                    notes="Approved via demo script"
+                )
+                print(f"  -> Workflow complete: {result.workflow_complete}")
+                print(f"  -> Approved: {result.approval_granted}")
+            except Exception as e:
+                print(f"  -> Error resuming: {e}")
 
 
 if __name__ == "__main__":

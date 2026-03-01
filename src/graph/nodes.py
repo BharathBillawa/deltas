@@ -10,7 +10,7 @@ Each node handles a specific stage of the claim workflow:
 
 import logging
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from sqlalchemy.orm import Session
 
@@ -445,6 +445,8 @@ def routing_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     logger.info(f"Routing node: Processing claim {state.claim.claim_id}")
 
     validation_result = state.validation_result
+    cost_estimate = state.cost_estimate
+    claim = state.claim
     updates: Dict[str, Any] = {}
 
     try:
@@ -468,10 +470,15 @@ def routing_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
             logger.info(f"Claim {state.claim.claim_id} auto-approved")
 
         else:
-            # Requires human review - workflow pauses here
+            # Requires human review - add to approval queue BEFORE pausing
             updates["requires_human_approval"] = True
             updates["workflow_complete"] = False
             updates["next_step"] = "human_review"
+
+            # Add to approval queue
+            queue_id = _add_to_approval_queue(db, claim, validation_result, cost_estimate)
+            if queue_id:
+                updates["queue_id"] = queue_id
 
             # Emit ApprovalRequired event
             flags_summary = [f.flag_type for f in validation_result.flags] if validation_result else []
@@ -502,12 +509,119 @@ def routing_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     return updates
 
 
+def _add_to_approval_queue(
+    db: Session,
+    claim: DamageClaim,
+    validation_result,
+    cost_estimate
+) -> Optional[str]:
+    """
+    Add claim to approval queue.
+
+    Args:
+        db: Database session
+        claim: The damage claim
+        validation_result: Validation result with flags
+        cost_estimate: Cost estimate
+
+    Returns:
+        Queue ID if added, None if already exists or error
+    """
+    from src.persistence.database import ApprovalQueueDB
+    from uuid import uuid4
+
+    try:
+        # Check if already in queue
+        existing = db.query(ApprovalQueueDB).filter(
+            ApprovalQueueDB.claim_id == claim.claim_id,
+            ApprovalQueueDB.status == "pending_review"
+        ).first()
+
+        if existing:
+            logger.info(f"Claim {claim.claim_id} already in queue: {existing.queue_id}")
+            return existing.queue_id
+
+        # Create queue entry
+        queue_id = str(uuid4())
+
+        # Build damage description
+        damage_desc = (
+            f"{claim.damage_assessment.severity.value} "
+            f"{claim.damage_assessment.damage_type.value} at "
+            f"{claim.damage_assessment.location.value}"
+        )
+
+        # Get estimated cost
+        estimated_cost = cost_estimate.total_eur if cost_estimate else 0.0
+
+        # Get escalation reason
+        escalation_reason = "Manual review required"
+        if validation_result and validation_result.escalation_reason:
+            escalation_reason = validation_result.escalation_reason.value
+        elif validation_result:
+            escalation_reason = validation_result.routing_reason
+
+        # Get flags as strings
+        flags_list = []
+        if validation_result and validation_result.flags:
+            flags_list = [f.flag_type for f in validation_result.flags]
+
+        # Get vehicle context
+        vehicle_id = claim.vehicle_id
+        vehicle_health = None
+        cumulative_damage = None
+        if claim.vehicle_context:
+            vehicle_health = claim.vehicle_context.health_score
+            cumulative_damage = claim.vehicle_context.cumulative_damage_ytd_eur
+
+        # Calculate priority based on cost and flags
+        priority = 3  # Default
+        if estimated_cost > 1000:
+            priority = 2
+        if estimated_cost > 2000 or "fraud_risk" in flags_list:
+            priority = 1
+
+        # Pattern summary
+        pattern_summary = None
+        if validation_result and validation_result.patterns_detected:
+            patterns = [p.pattern_type.value for p in validation_result.patterns_detected]
+            pattern_summary = f"Patterns: {', '.join(patterns)}"
+
+        queue_entry = ApprovalQueueDB(
+            queue_id=queue_id,
+            claim_id=claim.claim_id,
+            vehicle_id=vehicle_id,
+            customer_id=claim.customer_id,
+            damage_description=damage_desc,
+            estimated_cost_eur=estimated_cost,
+            flags=flags_list,
+            routing_decision=validation_result.routing_decision.value if validation_result else "human_review_required",
+            escalation_reason=escalation_reason,
+            priority=priority,
+            status="pending_review",
+            vehicle_health_score=vehicle_health,
+            cumulative_damage_ytd_eur=cumulative_damage,
+            pattern_summary=pattern_summary
+        )
+
+        db.add(queue_entry)
+        db.commit()
+
+        logger.info(f"Added claim {claim.claim_id} to approval queue: {queue_id}")
+        return queue_id
+
+    except Exception as e:
+        logger.error(f"Error adding to approval queue: {e}")
+        db.rollback()
+        return None
+
+
 def human_review_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     """
-    Human review node: Add claim to approval queue and pause workflow.
+    Human review node: Workflow pauses here for human approval.
 
-    This node is reached when human review is required.
-    The workflow will interrupt here and resume after approval.
+    The claim has already been added to the approval queue in routing_node.
+    This node marks the pause point for the workflow interrupt.
 
     Args:
         state: Current workflow state
@@ -518,9 +632,7 @@ def human_review_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     """
     logger.info(f"Human review node: Claim {state.claim.claim_id} awaiting approval")
 
-    # This is where LangGraph's interrupt() will pause execution
-    # The claim should already be in the approval queue
-
+    # Workflow pauses here - claim already in approval queue
     return {
         "next_step": "awaiting_approval"
     }

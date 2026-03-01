@@ -308,6 +308,255 @@ class TestWorkflowEndToEnd:
         assert result is not None
 
 
+class TestHumanInTheLoop:
+    """Tests for human-in-the-loop functionality."""
+
+    def test_high_cost_claim_pauses_for_review(self):
+        """High cost claims should pause at human_review."""
+        # Create claim that will exceed threshold
+        claim = DamageClaim(
+            claim_id="CLM-HITL-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",  # Luxury vehicle
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0300",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Cracked front bumper",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        result = workflow.process_claim(claim)
+
+        # Should require human approval
+        assert result.requires_human_approval is True
+        # Should not be complete yet
+        assert result.workflow_complete is False
+
+    def test_claim_added_to_approval_queue(self, db_session):
+        """Claims requiring review should be added to approval queue."""
+        from src.persistence.database import ApprovalQueueDB
+
+        claim = DamageClaim(
+            claim_id="CLM-QUEUE-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0301",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Cracked bumper for queue test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow.process_claim(claim)
+
+        # Check approval queue
+        queue_item = db_session.query(ApprovalQueueDB).filter(
+            ApprovalQueueDB.claim_id == "CLM-QUEUE-001"
+        ).first()
+
+        assert queue_item is not None
+        assert queue_item.status == "pending_review"
+        assert queue_item.estimated_cost_eur > 0
+
+    def test_get_pending_approvals(self):
+        """Should return list of pending approvals."""
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+
+        # Process a claim that needs review
+        claim = DamageClaim(
+            claim_id="CLM-PENDING-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0302",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Bumper crack for pending test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow.process_claim(claim)
+
+        # Get pending approvals
+        pending = workflow.get_pending_approvals()
+
+        # Should have at least one pending
+        assert len(pending) >= 1
+
+        # Find our claim
+        our_claim = next((p for p in pending if p["claim_id"] == "CLM-PENDING-001"), None)
+        assert our_claim is not None
+        assert our_claim["escalation_reason"] is not None
+
+    def test_workflow_status_shows_paused(self):
+        """Workflow status should show paused state."""
+        claim = DamageClaim(
+            claim_id="CLM-STATUS-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0303",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Bumper crack for status test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow.process_claim(claim)
+
+        status = workflow.get_status("CLM-STATUS-001")
+
+        assert status is not None
+        assert status["requires_human_approval"] is True
+
+    def test_is_awaiting_approval(self):
+        """Should correctly identify claims awaiting approval."""
+        claim = DamageClaim(
+            claim_id="CLM-AWAIT-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0304",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Bumper crack for await test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow.process_claim(claim)
+
+        assert workflow.is_awaiting_approval("CLM-AWAIT-001") is True
+
+    def test_resume_after_approval_approve(self, db_session):
+        """Should resume workflow after approval."""
+        from src.persistence.database import ApprovalQueueDB
+
+        claim = DamageClaim(
+            claim_id="CLM-RESUME-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0305",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Bumper crack for resume test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow.process_claim(claim)
+
+        # Verify it's waiting
+        assert workflow.is_awaiting_approval("CLM-RESUME-001") is True
+
+        # Resume with approval
+        result = workflow.resume_after_approval(
+            claim_id="CLM-RESUME-001",
+            approved=True,
+            reviewer_id="REVIEWER-001",
+            notes="Approved after review"
+        )
+
+        assert result.workflow_complete is True
+        assert result.approval_granted is True
+
+        # Check queue was updated
+        queue_item = db_session.query(ApprovalQueueDB).filter(
+            ApprovalQueueDB.claim_id == "CLM-RESUME-001"
+        ).first()
+
+        assert queue_item is not None
+        assert queue_item.status == "approved"
+        assert queue_item.reviewer_id == "REVIEWER-001"
+
+    def test_resume_after_approval_reject(self, db_session):
+        """Should resume workflow after rejection."""
+        from src.persistence.database import ApprovalQueueDB
+
+        claim = DamageClaim(
+            claim_id="CLM-REJECT-001",
+            timestamp=datetime.now(),
+            vehicle_id="AUDI-A6-2019-004",
+            customer_id="CUST-7788",
+            rental_agreement_id="RNT-2026-0306",
+            return_location="Berlin_City",
+            damage_assessment=DamageAssessment(
+                damage_type=DamageType.BUMPER_CRACK,
+                severity=DamageSeverity.MEDIUM,
+                location=VehicleLocation.FRONT_BUMPER,
+                description="Bumper crack for reject test",
+                affected_parts=["front_bumper"],
+                photos=[],
+                inspector_id="INSP-001"
+            )
+        )
+
+        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow.process_claim(claim)
+
+        # Resume with rejection
+        result = workflow.resume_after_approval(
+            claim_id="CLM-REJECT-001",
+            approved=False,
+            reviewer_id="REVIEWER-002",
+            notes="Insufficient documentation"
+        )
+
+        assert result.workflow_complete is True
+        assert result.approval_granted is False
+
+        # Check queue was updated
+        queue_item = db_session.query(ApprovalQueueDB).filter(
+            ApprovalQueueDB.claim_id == "CLM-REJECT-001"
+        ).first()
+
+        assert queue_item is not None
+        assert queue_item.status == "rejected"
+        assert queue_item.decision_notes == "Insufficient documentation"
+
+
 class TestWorkflowThresholds:
     """Tests for workflow threshold configurations."""
 

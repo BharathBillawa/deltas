@@ -18,11 +18,12 @@ from typing import Dict, Any, Literal, Optional
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import interrupt, Command
 from sqlalchemy.orm import Session
 
 from src.models.state import DamageClaimState
 from src.models.damage import DamageClaim
-from src.persistence.database import SessionLocal
+from src.persistence.database import SessionLocal, ApprovalQueueDB
 from src.graph.nodes import (
     intake_node,
     cost_estimation_node,
@@ -153,8 +154,12 @@ def create_workflow(checkpointer: Optional[MemorySaver] = None) -> StateGraph:
     )
 
     # Compile with optional checkpointer
+    # Use interrupt_before to pause before human_review node
     if checkpointer:
-        return workflow.compile(checkpointer=checkpointer)
+        return workflow.compile(
+            checkpointer=checkpointer,
+            interrupt_before=["human_review"]
+        )
     return workflow.compile()
 
 
@@ -191,7 +196,7 @@ class DamageClaimWorkflow:
             thread_id: Optional thread ID for checkpointing (defaults to claim_id)
 
         Returns:
-            Final workflow state
+            Final workflow state (may be interrupted if human review needed)
         """
         # Create initial state
         initial_state = DamageClaimState(claim=claim)
@@ -201,7 +206,7 @@ class DamageClaimWorkflow:
 
         logger.info(f"Starting workflow for claim {claim.claim_id}")
 
-        # Run workflow
+        # Run workflow - may be interrupted for human review
         result_dict = self.workflow.invoke(initial_state, config)
 
         # LangGraph returns a dict, convert to state object
@@ -211,9 +216,23 @@ class DamageClaimWorkflow:
         else:
             result = result_dict
 
+        # Check if workflow was interrupted (requires human review)
+        if self.checkpointer:
+            state_snapshot = self.workflow.get_state(config)
+            if state_snapshot and state_snapshot.next:
+                # Workflow is paused at a node
+                logger.info(
+                    f"Workflow paused for claim {claim.claim_id} at: {state_snapshot.next}"
+                )
+                # Update result to reflect interrupted state
+                result = result.model_copy(update={
+                    "requires_human_approval": True,
+                    "workflow_complete": False,
+                })
+
         logger.info(
-            f"Workflow complete for {claim.claim_id}: "
-            f"complete={result.workflow_complete}, "
+            f"Workflow {'paused' if result.requires_human_approval and not result.workflow_complete else 'complete'} "
+            f"for {claim.claim_id}: complete={result.workflow_complete}, "
             f"requires_approval={result.requires_human_approval}"
         )
 
@@ -244,15 +263,14 @@ class DamageClaimWorkflow:
         if not self.checkpointer:
             raise ValueError("Cannot resume without checkpointer")
 
-        # Update state with approval decision
-        state_update = {
-            "approval_granted": approved,
-            "workflow_complete": True,
-            "workflow_completed_at": datetime.now().isoformat(),
-            "next_step": "complete" if approved else None,
-        }
+        # Get current state
+        state_snapshot = self.workflow.get_state(config)
+        if not state_snapshot or not state_snapshot.values:
+            raise ValueError(f"No workflow state found for claim {claim_id}")
 
-        # Log the decision
+        current_state = state_snapshot.values
+
+        # Log the decision and update approval queue
         db = SessionLocal()
         try:
             from src.services.event_logger import EventLogger
@@ -270,29 +288,70 @@ class DamageClaimWorkflow:
                     reviewer_id=reviewer_id,
                     reason=notes or "Rejected without notes"
                 )
+
+            # Update approval queue status
+            queue_item = db.query(ApprovalQueueDB).filter(
+                ApprovalQueueDB.claim_id == claim_id,
+                ApprovalQueueDB.status == "pending_review"
+            ).first()
+
+            if queue_item:
+                queue_item.status = "approved" if approved else "rejected"
+                queue_item.reviewer_id = reviewer_id
+                queue_item.decision_notes = notes
+                queue_item.decision_timestamp = datetime.now()
+                queue_item.approved = approved
+                db.commit()
+                logger.info(f"Updated approval queue: {queue_item.queue_id} -> {'approved' if approved else 'rejected'}")
+
         finally:
             db.close()
 
         logger.info(
-            f"Workflow resumed for {claim_id}: "
+            f"Resuming workflow for {claim_id}: "
             f"approved={approved}, reviewer={reviewer_id}"
         )
 
-        # Return updated state (workflow is complete after approval)
-        # In a real implementation, we would update the checkpointed state
-        return DamageClaimState(
-            claim=DamageClaim(
-                claim_id=claim_id,
-                timestamp=datetime.now(),
-                vehicle_id="",
-                customer_id="",
-                rental_agreement_id="",
-                return_location="",
-                damage_assessment=None  # Would be loaded from checkpoint
-            ),
-            workflow_complete=True,
-            approval_granted=approved
-        )
+        # Update state with approval decision and continue workflow
+        state_update = {
+            "approval_granted": approved,
+            "workflow_complete": True,
+            "workflow_completed_at": datetime.now().isoformat(),
+            "next_step": "complete",
+        }
+
+        # Use update_state to modify the checkpointed state
+        self.workflow.update_state(config, state_update)
+
+        # Continue the workflow from where it was interrupted
+        # Pass None to continue from current state
+        result_dict = self.workflow.invoke(None, config)
+
+        # Build final state
+        if isinstance(result_dict, dict):
+            # Get the claim from current state
+            claim_data = current_state.get("claim", {})
+            if isinstance(claim_data, dict):
+                # Reconstruct claim from dict
+                final_state = DamageClaimState(
+                    claim=DamageClaim.model_validate(claim_data),
+                    workflow_complete=True,
+                    approval_granted=approved,
+                    workflow_completed_at=datetime.now().isoformat(),
+                    cost_estimate=current_state.get("cost_estimate"),
+                    validation_result=current_state.get("validation_result"),
+                )
+            else:
+                final_state = DamageClaimState(
+                    claim=claim_data,
+                    workflow_complete=True,
+                    approval_granted=approved,
+                    workflow_completed_at=datetime.now().isoformat(),
+                )
+        else:
+            final_state = result_dict
+
+        return final_state
 
     def get_status(self, claim_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -312,6 +371,10 @@ class DamageClaimWorkflow:
         try:
             state = self.workflow.get_state(config)
             if state and state.values:
+                # Check if workflow is paused
+                is_paused = bool(state.next)
+                paused_at = list(state.next) if state.next else None
+
                 return {
                     "claim_id": claim_id,
                     "workflow_complete": state.values.get("workflow_complete", False),
@@ -319,11 +382,64 @@ class DamageClaimWorkflow:
                     "approval_granted": state.values.get("approval_granted"),
                     "next_step": state.values.get("next_step"),
                     "errors": state.values.get("errors", []),
+                    "is_paused": is_paused,
+                    "paused_at": paused_at,
+                    "cost_estimate": state.values.get("cost_estimate"),
+                    "validation_result": state.values.get("validation_result"),
                 }
         except Exception as e:
             logger.error(f"Error getting status for {claim_id}: {e}")
 
         return None
+
+    def is_awaiting_approval(self, claim_id: str) -> bool:
+        """
+        Check if a workflow is paused awaiting human approval.
+
+        Args:
+            claim_id: The claim ID
+
+        Returns:
+            True if workflow is paused at human_review
+        """
+        status = self.get_status(claim_id)
+        if status:
+            return status.get("is_paused", False) and status.get("requires_human_approval", False)
+        return False
+
+    def get_pending_approvals(self) -> list:
+        """
+        Get all claims pending human approval from the database.
+
+        Returns:
+            List of pending approval items
+        """
+        db = SessionLocal()
+        try:
+            pending = db.query(ApprovalQueueDB).filter(
+                ApprovalQueueDB.status == "pending_review"
+            ).order_by(
+                ApprovalQueueDB.priority.asc(),
+                ApprovalQueueDB.timestamp_added.asc()
+            ).all()
+
+            return [
+                {
+                    "queue_id": item.queue_id,
+                    "claim_id": item.claim_id,
+                    "vehicle_id": item.vehicle_id,
+                    "customer_id": item.customer_id,
+                    "damage_description": item.damage_description,
+                    "estimated_cost_eur": item.estimated_cost_eur,
+                    "escalation_reason": item.escalation_reason,
+                    "priority": item.priority,
+                    "flags": item.flags or [],
+                    "timestamp_added": item.timestamp_added.isoformat() if item.timestamp_added else None,
+                }
+                for item in pending
+            ]
+        finally:
+            db.close()
 
 
 # Singleton workflow instance
