@@ -22,7 +22,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Average Health Score</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ "%.1f".format(fleet_health.avg_health_score) }}<span class="text-lg text-gray-500">/10</span></p>
+                    <p class="text-3xl font-bold text-gray-900">{{ fleet_health.avg_health_score|round(1) }}<span class="text-lg text-gray-500">/10</span></p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Needing Attention</p>
@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Total Damage Cost YTD</p>
-                    <p class="text-3xl font-bold text-gray-900">€{{ "{:,.0f}".format(fleet_health.total_damage_cost_ytd) }}</p>
+                    <p class="text-3xl font-bold text-gray-900">€{{ fleet_health.total_damage_cost_ytd|round|int }}</p>
                 </div>
             </div>
 
@@ -96,7 +96,7 @@
                                 Risk {{ location.risk_score }}
                             </span>
                         </div>
-                        <p class="text-xs text-gray-600 mb-1">{{ location.total_damages }} damages · €{{ "{:,.0f}".format(location.total_cost_eur) }} total</p>
+                        <p class="text-xs text-gray-600 mb-1">{{ location.total_damages }} damages · €{{ location.total_cost_eur|round|int }} total</p>
                         <p class="text-xs text-gray-500">{{ location.recommendation }}</p>
                     </div>
                     {% endfor %}
@@ -113,10 +113,10 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-medium text-gray-900">{{ item.category }}</span>
-                            <span class="text-sm font-medium text-gray-900">€{{ "{:,.0f}".format(item.total_cost_eur) }}</span>
+                            <span class="text-sm font-medium text-gray-900">€{{ item.total_cost_eur|round|int }}</span>
                         </div>
                         <div class="text-xs text-gray-500 mb-2">
-                            {{ item.vehicle_count }} vehicles · €{{ "{:,.0f}".format(item.avg_cost_per_vehicle) }} avg per vehicle
+                            {{ item.vehicle_count }} vehicles · €{{ item.avg_cost_per_vehicle|round|int }} avg per vehicle
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-blue-600 h-2 rounded-full"
@@ -177,8 +177,8 @@
                             {% endfor %}
                         </div>
                         <div class="mt-2 flex items-center justify-between text-xs text-gray-500">
-                            <span>€{{ "{:,.0f}".format(vehicle.cumulative_damage_ytd_eur) }} damage YTD</span>
-                            <span>{{ "{:,}".format(vehicle.current_mileage_km) }} km</span>
+                            <span>€{{ vehicle.cumulative_damage_ytd_eur|round|int }} damage YTD</span>
+                            <span>{{ vehicle.current_mileage_km|int }} km</span>
                         </div>
                     </div>
                     {% endfor %}
