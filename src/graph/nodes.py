@@ -192,9 +192,9 @@ def cost_estimation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]
         if claim.vehicle_context:
             vehicle_context = {
                 "age_years": datetime.now().year - claim.vehicle_context.year,
-                "mileage_km": claim.vehicle_context.mileage_km,
-                "cumulative_damage_ytd": 0,  # Would fetch from DB in production
-                "recent_damage_count": 0,
+                "mileage_km": claim.vehicle_context.current_mileage_km,
+                "cumulative_damage_ytd": claim.vehicle_context.cumulative_damage_ytd_eur,
+                "recent_damage_count": len(claim.vehicle_context.damage_history),
             }
 
         # Use agent for cost estimation
