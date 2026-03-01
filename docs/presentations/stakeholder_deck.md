@@ -1,185 +1,213 @@
 # Deltas — Stakeholder Presentation
 
-## Damage Claims Automation for Car Rental Operations
+## AI-Powered Finance Process Automation: Damage Claims
 
 ---
 
 ## The Problem
 
-Damage claim processing in car rental is **manual, slow, and inconsistent**.
+Damage claims are a **core finance process** in car rental — high volume, manual, and directly impacting revenue recovery.
 
 | Pain Point | Impact |
 |------------|--------|
-| **15-30 min per claim** manually | Finance team bottleneck |
-| **No standardized pricing** | Inconsistent cost estimates across inspectors |
-| **Reactive pattern detection** | Repeat vehicle damage caught too late |
-| **No fleet intelligence** | Retirement decisions based on gut feel, not data |
-| **Flat escalation** | Every claim gets the same review, regardless of risk |
+| **15-30 min per claim** manually | Finance team bottleneck, poor time-to-value |
+| **No standardized pricing** | Inconsistent cost estimates, revenue leakage |
+| **100% manual review** | No distinction between routine and complex claims |
+| **Reactive pattern detection** | Fraud and fleet issues caught weeks too late |
+| **No system integration** | Data lives in spreadsheets, emails, paper forms |
 
-**~70% of claims are routine** (minor scratches, small dents under €500) — yet they receive the same manual handling as complex cases.
+**~70% of claims are routine** — minor scratches, small dents under €500. They don't need human judgment, yet they consume the same processing time as complex cases.
 
 ---
 
 ## The Solution
 
-Deltas automates the full claim lifecycle:
+An **AI agent-based workflow** that automates end-to-end damage claim processing within the finance organization.
 
 ```
-Damage Report → Cost Estimation → Validation → Routing → Resolution
+Document Intake → Cost Estimation → Validation → Routing → Resolution
+    (OCR/AI)        (AI Agent)       (AI Agent)    (Rules)    (Auto/Human)
 ```
 
-**Routine claims** (low cost, clean history) → auto-approved in seconds.
+**Routine claims** → auto-approved in seconds, invoice generated.
 
-**Complex cases** (luxury vehicles, repeat damage, fraud signals) → routed to human review with full context and AI reasoning.
+**Complex cases** → escalated to human review with full context, AI reasoning, and recommended action.
 
-The system handles the easy 70% automatically so the team can focus on the 30% that actually needs judgment.
+The system automates the 70% that's predictable, so the finance team focuses on the 30% that needs judgment.
 
 ---
 
-## How It Works
+## AI Agents & Workflow Orchestration
 
-### Workflow
+### Agent-Based Architecture
+
+Each workflow step is powered by an **AI agent** that combines deterministic business rules with LLM reasoning:
 
 ```
-┌──────────┐    ┌───────────────┐    ┌────────────┐    ┌─────────┐
-│  Intake  │ →  │ Cost Estimate │ →  │ Validation │ →  │ Routing │
-└──────────┘    └───────────────┘    └────────────┘    └────┬────┘
-                                                           │
-                                          ┌────────────────┼────────────────┐
-                                          ▼                                 ▼
-                                   ┌─────────────┐                  ┌──────────────┐
-                                   │ Auto-Approve │                  │ Human Review  │
-                                   │  + Invoice   │                  │  (with AI     │
-                                   └─────────────┘                  │   reasoning)  │
-                                                                    └──────────────┘
+┌─────────────────────────────────────────────────────┐
+│              LangGraph Workflow Engine                │
+│                                                      │
+│   ┌─────────┐   ┌──────────────┐   ┌────────────┐  │
+│   │ Intake  │ → │ Cost Agent   │ → │ Validator  │  │
+│   │ Agent   │   │              │   │ Agent      │  │
+│   └─────────┘   └──────────────┘   └────────────┘  │
+│        │               │                  │          │
+│   Tensorlake      Pricing +          Pattern +       │
+│   (doc extract)   Depreciation       Fraud           │
+│                   Services           Detection       │
+│                                                      │
+│                    ┌──────────┐                       │
+│                    │ Routing  │                       │
+│                    └────┬─────┘                       │
+│              ┌──────────┴──────────┐                 │
+│              ▼                     ▼                  │
+│     ┌──────────────┐     ┌────────────────┐         │
+│     │ Auto-Approve │     │ Human Review   │         │
+│     │ + Invoice    │     │ (with context) │         │
+│     └──────────────┘     └────────────────┘         │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Each step:
+### How Agents Work
 
-1. **Intake** — Extract damage details from report (Tensorlake document processing)
-2. **Cost Estimation** — Calculate repair costs using validated German market pricing
-3. **Validation** — Check vehicle history, detect patterns, score fraud risk
-4. **Routing** — Auto-approve or escalate based on cost + risk factors
-5. **Resolution** — Generate invoice or queue for human review with full context
+Each agent follows the same pattern — **deterministic first, LLM only when needed**:
+
+1. **Run business rules** (pricing tables, thresholds, pattern checks)
+2. **Check if case is ambiguous** (cost near threshold, conflicting signals)
+3. **If ambiguous → invoke LLM** with structured JSON output for reasoning
+4. **Return decision + explanation** for audit trail
+
+This keeps the system fast, predictable, and testable — while still leveraging AI for edge cases.
 
 ---
 
-## Intelligent Routing
+## Exception Handling & Escalation
 
-The system doesn't just check cost thresholds. It evaluates multiple factors:
+The system doesn't just auto-approve or reject. It implements **multi-factor escalation logic**:
 
-| Factor | Auto-Approve | Escalate to Human |
-|--------|-------------|-------------------|
+| Factor | Auto-Approve | Escalate to Human Review |
+|--------|-------------|--------------------------|
 | **Cost** | Under €500 | Over €500 |
 | **Vehicle** | Standard category | Luxury / Premium |
-| **History** | Clean | Repeat damage pattern |
+| **History** | Clean record | Repeat damage pattern |
 | **Fleet Health** | Healthy (>7/10) | Low score (<5/10) |
 | **Customer** | First claim | Multiple recent claims |
-| **Fraud Risk** | Low (<0.3) | Elevated (>0.5) |
+| **Fraud Score** | Low (<0.3) | Elevated (>0.5) |
 
-When a claim is escalated, the reviewer sees **why** — specific flags, risk scores, vehicle history, and AI reasoning — not just a queue item.
+### Human-in-the-Loop
+
+When a claim is escalated, the reviewer receives:
+
+- **Why it was escalated** — specific flags and scores, not just "needs review"
+- **AI reasoning** — what the agent's analysis found
+- **Vehicle history** — all prior damages, cumulative costs, service gaps
+- **Recommended action** — approve, reject, or investigate further
+
+The workflow **pauses and persists state** (LangGraph checkpointing). The reviewer approves or rejects via web console, CLI, or API. The workflow **resumes from where it stopped** — no re-processing.
 
 ---
 
 ## Cost Estimation
 
-Built on validated German market data:
+Built on **validated German market data** (GDV/Dekra 2024):
 
-- **Labor rate**: €202/hour (GDV/Dekra 2024)
+- **Labor rate**: €202/hour
 - **Category multipliers**: Economy (1.0x) → Premium (2.5x)
-- **Depreciation**: Age + mileage-based part depreciation for fair billing
+- **Depreciation**: Age + mileage-based part depreciation
 - **Real pricing database**: Scratches, dents, bumpers, glass, wheels, interior
 
-### Example: Same Damage, Different Vehicles
+### Example: Same Damage, Different Routing
 
 | | VW Polo (Economy) | BMW 530i (Luxury) |
 |--|-------------------|-------------------|
 | Bumper scratch repair | €165 | €420 |
-| Category multiplier | 1.0x | 1.8x |
-| Depreciation (3yr) | -15% | -15% |
-| **Final estimate** | **€140** | **€357** |
+| After depreciation (3yr) | **€140** | **€357** |
 | **Routing** | Auto-approve | Auto-approve |
 
 | | VW Polo (Economy) | BMW 530i (Luxury) |
 |--|-------------------|-------------------|
 | Bumper replacement | €800 | €1,800 |
-| Category multiplier | 1.0x | 1.8x |
 | **Routing** | Human review | Human review + luxury flag |
 
 ---
 
-## Pattern Recognition
+## Pattern Recognition & Fleet Intelligence
 
-Not just fraud detection — **fleet intelligence**:
+Beyond individual claims — the system builds **strategic intelligence**:
 
-### Vehicle Patterns
-- 3 damages in 75 days → investigate root cause
-- Cumulative repair cost approaching vehicle value → retirement candidate
+| Pattern Type | What it Detects | Action |
+|-------------|-----------------|--------|
+| **Vehicle** | 3 damages in 75 days | Flag for inspection, rotate to low-risk location |
+| **Location** | Munich Airport: 45% of damages | Identify high-risk areas, adjust processes |
+| **Customer** | Multiple claims in short period | Risk profile, potential fraud signal |
+| **Fleet Health** | Vehicle score dropping below 5/10 | Retirement candidate, cost-benefit analysis |
+| **Cumulative Cost** | Repair costs approaching vehicle value | Retire vs. continue decision support |
 
-### Location Patterns
-- Munich Airport: 45% of all damages → high-risk location
-- Specific parking areas generating repeat claims
-
-### Customer Patterns
-- Multiple claims in short period → risk profile
-- Cross-reference across rental history
-
-### Fleet Health Scores
-- Every vehicle scored 0-10 based on damage history, age, maintenance
-- Low-scoring vehicles flagged for rotation or retirement
+This turns damage data from a cost center into **fleet management intelligence**.
 
 ---
 
-## Interfaces
+## System Integration
 
-### Web Operations Console
-- **Dashboard** — Fleet overview, recent claims, key metrics
-- **Claim Submission** — Submit new damage reports
-- **Approval Queue** — Review escalated claims with full context + AI reasoning
-- **Analytics** — Fleet health, location risk, damage patterns
+### Three interfaces — same backend, different use cases:
 
-### CLI (for automation & scripting)
+| Interface | Users | Use Case |
+|-----------|-------|----------|
+| **Web Console** | Operations managers, finance team | Daily workflow — review queue, analytics, dashboards |
+| **REST API** | Other systems, automation tools | Integration with finance systems, ERPs, notification services |
+| **CLI** | Engineers, batch processing | Scripting, testing, bulk operations |
+
+### API Design
+
+19 RESTful endpoints with OpenAPI documentation:
+
 ```
-deltas process <scenario>    Process a claim
-deltas queue                 View approval queue
-deltas approve <id>          Approve a claim
-deltas reject <id>           Reject with reason
-deltas stats                 Fleet-wide statistics
+POST   /api/claims/              Submit a new claim
+GET    /api/claims/{id}          Claim status
+GET    /api/queue/               Approval queue
+POST   /api/queue/{id}/approve   Approve claim
+POST   /api/queue/{id}/reject    Reject claim
+GET    /api/analytics/fleet-health    Fleet scores
+GET    /api/analytics/patterns        Damage patterns
+GET    /api/events/{claim_id}         Audit trail
 ```
 
-### REST API (for integration)
-- Full CRUD for claims, queue, analytics, events
-- Interactive docs at `/docs`
+Ready for integration with existing systems — finance APIs, RPA tools, data pipelines.
 
 ---
 
-## What's Built
+## What's Built (MVP Status)
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| LangGraph Workflow | ✅ Complete | 7 nodes, checkpoint-based state management |
-| AI Agents | ✅ Complete | Cost estimation + validation with structured LLM output |
-| Business Services | ✅ Complete | Pricing, depreciation, pattern recognition, fleet analytics |
-| Tensorlake Integration | ✅ Complete | Document processing for damage extraction (mock) |
-| Human-in-the-Loop | ✅ Complete | Persistent approval queue with interrupt/resume |
-| Web Console | ✅ Complete | Dashboard, claims, queue, analytics (HTMX + Tailwind) |
-| CLI | ✅ Complete | 8 commands for processing and management |
-| REST API | ✅ Complete | 19 endpoints with OpenAPI docs |
-| Test Suite | ✅ Complete | 192 tests, 64% coverage |
-| Sample Data | ✅ Complete | 12 vehicles, 20+ damage records, 4 test scenarios |
+| LangGraph Workflow | ✅ | 7 nodes, checkpoint-based state, error handling |
+| AI Agents | ✅ | Cost estimation + validation, structured JSON LLM output |
+| Tensorlake Integration | ✅ | Document extraction interface designed against their SDK |
+| Business Services | ✅ | Pricing, depreciation, pattern recognition, fleet analytics |
+| Human-in-the-Loop | ✅ | Persistent queue, interrupt/resume, reviewer context |
+| Exception Handling | ✅ | Multi-factor escalation, fraud scoring, error recovery |
+| Web Console | ✅ | Dashboard, claims, queue, analytics |
+| REST API | ✅ | 19 endpoints, OpenAPI docs |
+| CLI | ✅ | 8 commands |
+| Test Suite | ✅ | 192 tests, 64% coverage |
+| Sample Data | ✅ | 12 vehicles, 20+ damage records, 5 test scenarios |
+
+**Time-to-value**: MVP built and tested. Ready for pilot with real data.
 
 ---
 
 ## Tech Stack
 
-| | |
-|--|--|
-| **Orchestration** | LangGraph (workflow + checkpoints + human-in-the-loop) |
-| **AI** | Google Gemini via LangChain (structured JSON output) |
-| **Backend** | Python 3.11, FastAPI, SQLAlchemy, Pydantic V2 |
-| **Frontend** | HTMX + Tailwind CSS (server-rendered, no SPA complexity) |
-| **Document Processing** | Tensorlake SDK |
-| **Database** | SQLite (PostgreSQL-ready via repository pattern) |
+| Layer | Technology | Why |
+|-------|------------|-----|
+| **Agent Orchestration** | LangGraph | Workflow checkpoints, human-in-the-loop, state management |
+| **LLM** | Google Gemini via LangChain | Structured output, function calling, cost-effective |
+| **Document Processing** | Tensorlake SDK | Built for fleet/automotive doc extraction, VPC-deployable |
+| **Backend** | Python 3.11, FastAPI | Industry standard, easy to maintain |
+| **Data Validation** | Pydantic V2 | Type-safe models across entire pipeline |
+| **Database** | SQLAlchemy + SQLite | Repository pattern — PostgreSQL-ready, no code changes |
+| **Web UI** | HTMX + Tailwind CSS | Server-rendered, fast iteration, no SPA overhead |
+| **API Integration** | REST + OpenAPI | Standard interface for RPA tools, ERPs, other systems |
 
 ---
 
@@ -190,10 +218,10 @@ Based on a mid-size rental operation (~5,000 claims/month):
 | Metric | Before | After | Impact |
 |--------|--------|-------|--------|
 | **Processing time** | 15-30 min/claim | <1 min (auto) / 5 min (review) | **~70% reduction** |
-| **Claims needing human review** | 100% | ~30% | **70% automated** |
-| **Cost estimate consistency** | Varies by inspector | Standardized pricing | **Eliminates variance** |
-| **Pattern detection** | Reactive (weeks/months) | Real-time | **Proactive fleet management** |
-| **Fraud signal detection** | Manual review | Automated scoring | **Every claim scored** |
+| **Claims requiring manual review** | 100% | ~30% | **70% fully automated** |
+| **Cost estimate consistency** | Varies by person | Standardized, auditable | **Eliminates variance** |
+| **Pattern detection** | Reactive (weeks) | Real-time | **Proactive management** |
+| **Fraud signal coverage** | Sampled manually | Every claim scored | **100% coverage** |
 
 ### Estimated Annual Savings
 
@@ -205,27 +233,31 @@ Based on a mid-size rental operation (~5,000 claims/month):
 | Fleet optimization (better retirement timing) | **€80,000/year** |
 | **Total estimated benefit** | **~€500,000/year** |
 
-*Assumptions: 5,000 claims/month, 20 min avg. saved per auto-approved claim, €3M annual damage costs, 10% baseline fraud rate.*
+*Assumptions: 5,000 claims/month, 20 min avg. saved per auto-approved claim, €3M annual damage costs.*
 
 ---
 
-## Next Steps
+## Rollout Path
 
 | Phase | Scope | Timeline |
 |-------|-------|----------|
-| **Pilot** | Deploy with real claims data, validate pricing accuracy | 4 weeks |
-| **Tensorlake Integration** | Connect real document processing (photos → structured data) | 2 weeks |
-| **Production** | PostgreSQL, auth, monitoring, CI/CD | 3 weeks |
-| **Scale** | Multi-location rollout, finance system integration | Ongoing |
+| **MVP** ✅ | Agent workflow, HITL, web console, API, tests | Done |
+| **Pilot** | Real claims data, validate pricing accuracy, user feedback | 4 weeks |
+| **Tensorlake** | Swap mock for live Tensorlake API | 2 weeks |
+| **Production** | PostgreSQL, auth, monitoring, CI/CD, finance system integration | 4 weeks |
+| **Scale** | Multi-location rollout, additional finance process automation | Ongoing |
+
+Designed for **iterative rollout** — each phase delivers value independently.
 
 ---
 
 ## Summary
 
-Deltas turns damage claim processing from a manual bottleneck into an automated pipeline.
-
-- **70% of claims** handled without human intervention
-- **Consistent pricing** based on validated market data
-- **Intelligent escalation** — humans review only what needs judgment
-- **Fleet intelligence** — patterns, health scores, retirement recommendations
-- **Production-grade** — tested, documented, ready for pilot
+| | |
+|--|--|
+| **What** | AI agent-based automation for damage claim processing |
+| **How** | LangGraph workflow + AI agents + human-in-the-loop |
+| **Impact** | 70% of claims automated, consistent pricing, real-time fraud detection |
+| **Intelligence** | Pattern recognition turns cost data into fleet management insights |
+| **Integration** | REST API ready for finance systems, RPA tools, data pipelines |
+| **Status** | MVP complete — 192 tests passing, ready for pilot |
