@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from src.persistence.database import VehicleDB, DamageDB
+from src.persistence.database import VehicleDB, DamageDB, ApprovalQueueDB
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,9 @@ class FleetAnalyticsService:
                 "total_vehicles": 0,
                 "health_distribution": {},
                 "avg_health_score": 0.0,
-                "vehicles_needing_attention": []
+                "vehicles_needing_attention": 0,
+                "total_damage_cost_ytd": 0.0,
+                "avg_damage_cost_per_vehicle": 0.0
             }
 
         # Categorize by health score
@@ -63,16 +65,12 @@ class FleetAnalyticsService:
         total = len(vehicles)
         avg_score = sum(v.health_score for v in vehicles) / total
 
+        # Financial metrics
+        total_damage_cost = sum(v.cumulative_damage_ytd_eur for v in vehicles)
+        avg_damage_cost = total_damage_cost / total
+
         # Vehicles needing attention (health < 6)
-        needs_attention = [
-            {
-                "vehicle_id": v.vehicle_id,
-                "make_model": f"{v.make} {v.model}",
-                "health_score": v.health_score,
-                "cumulative_damage_ytd": v.cumulative_damage_ytd_eur
-            }
-            for v in vehicles if v.health_score < 6
-        ]
+        needs_attention_count = sum(1 for v in vehicles if v.health_score < 6)
 
         return {
             "total_vehicles": total,
@@ -83,7 +81,9 @@ class FleetAnalyticsService:
                 "poor": {"count": poor, "percent": round(100 * poor / total, 1)}
             },
             "avg_health_score": round(avg_score, 2),
-            "vehicles_needing_attention": needs_attention
+            "vehicles_needing_attention": needs_attention_count,
+            "total_damage_cost_ytd": round(total_damage_cost, 2),
+            "avg_damage_cost_per_vehicle": round(avg_damage_cost, 2)
         }
 
     def get_location_risk_analysis(self) -> List[Dict]:
@@ -150,18 +150,29 @@ class FleetAnalyticsService:
             # Most common damage type
             most_common_type = max(stats["damage_types"], key=stats["damage_types"].get) if stats["damage_types"] else "unknown"
 
+            # Convert risk level to numeric score
+            risk_scores = {"low": 3.0, "medium": 6.0, "high": 9.0}
+            risk_score = risk_scores.get(risk_level, 5.0)
+
+            # Generate recommendation
+            if risk_level == "high":
+                recommendation = f"High damage rate at {loc}. Review parking/vehicle check procedures."
+            elif risk_level == "medium":
+                recommendation = f"Monitor {loc} for trends. Most common: {most_common_type}."
+            else:
+                recommendation = f"Low risk location. Standard monitoring sufficient."
+
             result.append({
                 "location": loc,
-                "damage_count": stats["damage_count"],
+                "total_damages": stats["damage_count"],
                 "total_cost_eur": round(stats["total_cost_eur"], 2),
-                "avg_cost_eur": round(avg_cost, 2),
-                "risk_level": risk_level,
-                "most_common_damage": most_common_type,
-                "percentage_of_total": round(100 * stats["damage_count"] / total_damages, 1)
+                "avg_cost_per_damage": round(avg_cost, 2),
+                "risk_score": risk_score,
+                "recommendation": recommendation
             })
 
         # Sort by damage count descending
-        result.sort(key=lambda x: x["damage_count"], reverse=True)
+        result.sort(key=lambda x: x["total_damages"], reverse=True)
 
         return result
 
@@ -304,3 +315,60 @@ class FleetAnalyticsService:
             reasons.append(f"High mileage: {mileage_km:,} km")
 
         return reasons if reasons else ["Review recommended"]
+
+    def get_pattern_summary(self) -> List[Dict]:
+        """
+        Get summary of detected patterns across the fleet.
+
+        Returns patterns from approval queue where patterns were detected.
+        """
+        # Get claims with pattern_summary data
+        queue_items = (
+            self.db.query(ApprovalQueueDB)
+            .filter(ApprovalQueueDB.pattern_summary.isnot(None))
+            .all()
+        )
+
+        patterns = []
+        for item in queue_items:
+            if item.pattern_summary:
+                # Parse pattern summary (stored as text)
+                patterns.append({
+                    "pattern_type": "damage_pattern",
+                    "vehicle_id": item.vehicle_id,
+                    "description": item.pattern_summary[:200]  # Truncate for display
+                })
+
+        return patterns
+
+    def get_cost_breakdown_by_category(self) -> List[Dict]:
+        """
+        Get cost breakdown by vehicle category.
+
+        Returns total damage costs grouped by category.
+        """
+        # Aggregate by category
+        results = (
+            self.db.query(
+                VehicleDB.category,
+                func.sum(VehicleDB.cumulative_damage_ytd_eur).label("total_cost"),
+                func.count(VehicleDB.vehicle_id).label("vehicle_count")
+            )
+            .group_by(VehicleDB.category)
+            .all()
+        )
+
+        breakdown = []
+        for category, total_cost, vehicle_count in results:
+            avg_cost = total_cost / vehicle_count if vehicle_count > 0 else 0
+            breakdown.append({
+                "category": category,
+                "total_cost_eur": round(total_cost, 2),
+                "vehicle_count": vehicle_count,
+                "avg_cost_per_vehicle": round(avg_cost, 2)
+            })
+
+        # Sort by total cost descending
+        breakdown.sort(key=lambda x: x["total_cost_eur"], reverse=True)
+
+        return breakdown
