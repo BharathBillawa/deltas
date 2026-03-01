@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Claim - Deltas{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-0" x-data="claimForm()">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Submit New Claim</h1>
+        <p class="mt-2 text-sm text-gray-600">Process a damage claim through the automated workflow</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white shadow rounded-lg max-w-3xl">
+        <div class="px-4 py-5 sm:p-6">
+            <form @submit.prevent="submitClaim">
+                <!-- Vehicle Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Vehicle ID <span class="text-red-500">*</span>
+                    </label>
+                    <select x-model="form.vehicle_id" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">Select a vehicle...</option>
+                        <option value="VW-POLO-2023-001">VW-POLO-2023-001 (VW Polo 2023)</option>
+                        <option value="BMW-X5-2020-006">BMW-X5-2020-006 (BMW X5 2020)</option>
+                        <option value="AUDI-A6-2019-004">AUDI-A6-2019-004 (Audi A6 2019)</option>
+                        <option value="VW-GOLF-2022-003">VW-GOLF-2022-003 (VW Golf 2022)</option>
+                        <option value="BMW-530-2018-009">BMW-530-2018-009 (BMW 530i 2018)</option>
+                    </select>
+                </div>
+
+                <!-- Damage Type -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Damage Type <span class="text-red-500">*</span>
+                    </label>
+                    <select x-model="form.damage_type" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="scratch">Scratch</option>
+                        <option value="dent">Dent</option>
+                        <option value="bumper_crack">Bumper Crack</option>
+                        <option value="windshield_crack">Windshield Crack</option>
+                        <option value="interior_damage">Interior Damage</option>
+                        <option value="mechanical">Mechanical</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Severity -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Severity <span class="text-red-500">*</span>
+                    </label>
+                    <select x-model="form.severity" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="minor">Minor</option>
+                        <option value="medium">Medium</option>
+                        <option value="severe">Severe</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+
+                <!-- Location -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Location <span class="text-red-500">*</span>
+                    </label>
+                    <select x-model="form.location" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="front_bumper">Front Bumper</option>
+                        <option value="rear_bumper">Rear Bumper</option>
+                        <option value="driver_door">Driver Door</option>
+                        <option value="passenger_door">Passenger Door</option>
+                        <option value="rear_quarter_panel">Rear Quarter Panel</option>
+                        <option value="windshield">Windshield</option>
+                        <option value="rear_seat">Rear Seat</option>
+                        <option value="undercarriage">Undercarriage</option>
+                        <option value="side_mirror">Side Mirror</option>
+                        <option value="multiple">Multiple</option>
+                    </select>
+                </div>
+
+                <!-- Return Location -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Return Location <span class="text-red-500">*</span>
+                    </label>
+                    <select x-model="form.return_location" required
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="Munich_Airport">Munich Airport</option>
+                        <option value="Berlin_City">Berlin City</option>
+                        <option value="Frankfurt_Airport">Frankfurt Airport</option>
+                        <option value="Hamburg_Port">Hamburg Port</option>
+                        <option value="Stuttgart_Central">Stuttgart Central</option>
+                    </select>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea x-model="form.description" rows="3" required
+                              class="shadow-sm focus:ring-blue-500 focus:border-blue-500 mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                              placeholder="Describe the damage..."></textarea>
+                </div>
+
+                <!-- Customer & Rental Info -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Customer ID <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="form.customer_id" required
+                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                               placeholder="CUST-001">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Rental Agreement <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="form.rental_agreement_id" required
+                               class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                               placeholder="RNT-2026-001">
+                    </div>
+                </div>
+
+                <!-- Quick Scenario Buttons -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-md">
+                    <p class="text-sm font-medium text-gray-700 mb-3">Quick Load Scenario:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" @click="loadScenario('auto_approve')"
+                                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100">
+                            Minor Scratch (Auto-Approve)
+                        </button>
+                        <button type="button" @click="loadScenario('high_cost')"
+                                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100">
+                            High Cost (Human Review)
+                        </button>
+                        <button type="button" @click="loadScenario('pattern')"
+                                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100">
+                            Pattern Detection
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex items-center justify-between">
+                    <button type="submit"
+                            :disabled="submitting"
+                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!submitting">Submit Claim</span>
+                        <span x-show="submitting">Processing...</span>
+                    </button>
+                    <button type="button" @click="resetForm"
+                            class="text-sm text-gray-500 hover:text-gray-700">
+                        Reset Form
+                    </button>
+                </div>
+            </form>
+
+            <!-- Result Display -->
+            <div x-show="result" x-cloak class="mt-8 p-6 rounded-lg"
+                 :class="result?.requires_human_approval ? 'bg-yellow-50 border-2 border-yellow-200' : 'bg-green-50 border-2 border-green-200'">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg x-show="!result?.requires_human_approval" class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <svg x-show="result?.requires_human_approval" class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="text-lg font-medium" :class="result?.requires_human_approval ? 'text-yellow-800' : 'text-green-800'" x-text="result?.message"></h3>
+                        <div class="mt-2 text-sm" :class="result?.requires_human_approval ? 'text-yellow-700' : 'text-green-700'">
+                            <p><strong>Claim ID:</strong> <span x-text="result?.claim_id"></span></p>
+                            <p x-show="result?.estimated_cost_eur"><strong>Estimated Cost:</strong> €<span x-text="result?.estimated_cost_eur?.toFixed(2)"></span></p>
+                            <p><strong>Status:</strong> <span x-text="result?.status"></span></p>
+                        </div>
+                        <div class="mt-4">
+                            <a :href="'/ui/queue'" x-show="result?.requires_human_approval"
+                               class="text-sm font-medium text-yellow-700 hover:text-yellow-600">
+                                View in Approval Queue →
+                            </a>
+                            <button @click="result = null; resetForm()" x-show="!result?.requires_human_approval"
+                                    class="text-sm font-medium text-green-700 hover:text-green-600">
+                                Submit Another Claim →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function claimForm() {
+    return {
+        submitting: false,
+        result: null,
+        form: {
+            claim_id: 'CLM-' + Date.now(),
+            vehicle_id: '',
+            customer_id: '',
+            rental_agreement_id: '',
+            return_location: '',
+            damage_type: 'scratch',
+            severity: 'minor',
+            location: 'rear_bumper',
+            description: '',
+            affected_parts: ['rear_bumper'],
+            photos: ['photo1.jpg'],
+            inspector_id: 'INSP-WEB-001'
+        },
+
+        loadScenario(type) {
+            if (type === 'auto_approve') {
+                this.form.vehicle_id = 'VW-POLO-2023-001';
+                this.form.damage_type = 'scratch';
+                this.form.severity = 'minor';
+                this.form.location = 'rear_bumper';
+                this.form.description = 'Small scratch on rear bumper from parking';
+                this.form.customer_id = 'CUST-' + Math.floor(Math.random() * 9000 + 1000);
+                this.form.rental_agreement_id = 'RNT-2026-' + Math.floor(Math.random() * 9000 + 1000);
+                this.form.return_location = 'Munich_Airport';
+            } else if (type === 'high_cost') {
+                this.form.vehicle_id = 'BMW-X5-2020-006';
+                this.form.damage_type = 'dent';
+                this.form.severity = 'severe';
+                this.form.location = 'driver_door';
+                this.form.description = 'Large dent on driver door requiring panel replacement';
+                this.form.customer_id = 'CUST-' + Math.floor(Math.random() * 9000 + 1000);
+                this.form.rental_agreement_id = 'RNT-2026-' + Math.floor(Math.random() * 9000 + 1000);
+                this.form.return_location = 'Berlin_City';
+            } else if (type === 'pattern') {
+                this.form.vehicle_id = 'VW-GOLF-2022-003';
+                this.form.damage_type = 'scratch';
+                this.form.severity = 'medium';
+                this.form.location = 'front_bumper';
+                this.form.description = 'Scratch on front bumper - same vehicle as previous claims';
+                this.form.customer_id = 'CUST-7777';
+                this.form.rental_agreement_id = 'RNT-2026-' + Math.floor(Math.random() * 9000 + 1000);
+                this.form.return_location = 'Munich_Airport';
+            }
+        },
+
+        resetForm() {
+            this.form.claim_id = 'CLM-' + Date.now();
+            this.form.vehicle_id = '';
+            this.form.customer_id = '';
+            this.form.rental_agreement_id = '';
+            this.form.description = '';
+            this.result = null;
+        },
+
+        async submitClaim() {
+            this.submitting = true;
+            this.result = null;
+
+            try {
+                const response = await fetch('/claims/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(this.form)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to submit claim');
+                }
+
+                this.result = await response.json();
+                showToast(this.result.message, this.result.requires_human_approval ? 'info' : 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Failed to submit claim: ' + error.message, 'error');
+            } finally {
+                this.submitting = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import claims, queue, analytics, events
+from src.api.routes import claims, queue, analytics, events, ui
 from src.persistence.database import init_db
 
 
@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(ui.router, prefix="/ui", tags=["Web UI"])
 app.include_router(claims.router, prefix="/claims", tags=["Claims"])
 app.include_router(queue.router, prefix="/queue", tags=["Approval Queue"])
 app.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
