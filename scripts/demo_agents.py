@@ -16,6 +16,7 @@ from src.models.damage import DamageClaim, DamageAssessment, DamageType, DamageS
 from src.agents.cost_estimator_agent import CostEstimatorAgent
 from src.agents.validator_agent import ValidatorAgent
 from src.persistence.database import get_db
+from src.config.settings import settings
 
 
 def demo_cost_estimator():
@@ -140,7 +141,13 @@ if __name__ == "__main__":
     print("LLM AGENTS DEMONSTRATION")
     print("="*70)
     print("\nShowing how agents add AI reasoning to edge cases...")
-    print("Note: If GOOGLE_API_KEY not configured, falls back to deterministic logic")
+
+    # Check API key status
+    if settings.google_api_key:
+        print("✓ GOOGLE_API_KEY configured - AI reasoning ENABLED")
+        print("  Model: gemini-3-flash-preview")
+    else:
+        print("⚠ GOOGLE_API_KEY not configured - falling back to deterministic logic")
 
     try:
         demo_cost_estimator()
