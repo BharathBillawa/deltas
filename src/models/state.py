@@ -57,6 +57,17 @@ class DamageClaimState(BaseModel):
     invoice: Optional[Invoice] = None
     retirement_analysis: Optional[RetirementAnalysis] = None
 
+    # === AI Reasoning ===
+    # (AI-powered agent reasoning for transparency and audit)
+    ai_cost_reasoning: Optional[str] = Field(
+        default=None,
+        description="LLM reasoning for cost estimation (edge cases only)"
+    )
+    ai_validation_reasoning: Optional[str] = Field(
+        default=None,
+        description="LLM reasoning for validation decision (ambiguous patterns)"
+    )
+
     # === Events ===
     # (Published at each stage for event-driven architecture)
     events: List[BaseEvent] = Field(default_factory=list)
