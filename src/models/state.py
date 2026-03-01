@@ -6,7 +6,7 @@ Defines the shared state that flows through the agent workflow.
 
 from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from src.models.damage import DamageClaim
 from src.models.events import BaseEvent
@@ -84,8 +84,8 @@ class DamageClaimState(BaseModel):
     workflow_completed_at: Optional[str] = None
     processing_time_seconds: Optional[float] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "claim": {
                     "claim_id": "CLM-2026-001",
@@ -96,6 +96,9 @@ class DamageClaimState(BaseModel):
                 "requires_human_approval": False
             }
         }
+
+
+    )
 
 
 # Type annotations for LangGraph

@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DamageType(str, Enum):
@@ -80,8 +80,8 @@ class DamageAssessment(BaseModel):
     inspector_id: str
     inspector_notes: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "damage_type": "scratch",
                 "severity": "minor",
@@ -93,6 +93,7 @@ class DamageAssessment(BaseModel):
                 "inspector_notes": "Clean scratch, buffing should be sufficient"
             }
         }
+    )
 
 
 class ServiceRecord(BaseModel):
@@ -162,8 +163,8 @@ class VehicleInfo(BaseModel):
     # Flags and notes
     notes: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "vehicle_id": "VW-POLO-2023-001",
                 "category": "Economy",
@@ -173,6 +174,7 @@ class VehicleInfo(BaseModel):
                 "health_score": 9.2
             }
         }
+    )
 
 
 class DamageClaim(BaseModel):
@@ -192,8 +194,8 @@ class DamageClaim(BaseModel):
     # Context (enriched by system)
     vehicle_context: Optional[VehicleInfo] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "claim_id": "CLM-2026-001",
                 "timestamp": "2026-02-28T10:30:00Z",
@@ -203,3 +205,4 @@ class DamageClaim(BaseModel):
                 "return_location": "Munich_Airport"
             }
         }
+    )

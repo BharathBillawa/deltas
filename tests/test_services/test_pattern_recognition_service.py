@@ -96,7 +96,8 @@ class TestPatternRecognitionService:
 
         profile = pattern_service.analyze_customer_risk("TEST-CUST-001")
         assert profile.risk_score == 0.0
-        assert not profile.is_frequent_claimer
+        assert not profile.is_high_risk
+        assert profile.damages_reported == 0
 
     def test_customer_risk_with_damages(self, pattern_service, db_session):
         """Customer with damages should have calculated risk."""
@@ -125,9 +126,9 @@ class TestPatternRecognitionService:
         db_session.commit()
 
         profile = pattern_service.analyze_customer_risk("TEST-CUST-002")
-        assert profile.total_damages == 2
-        assert profile.total_cost_eur == 600.0
+        assert profile.damages_reported == 2
         assert profile.risk_score > 0.0
+        assert profile.total_rentals == 20
 
     def test_vehicle_health_score(self, pattern_service, db_session):
         """Should return vehicle health score."""

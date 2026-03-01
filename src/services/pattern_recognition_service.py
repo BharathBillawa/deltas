@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from src.models.routing import PatternDetection, CustomerRiskProfile
+from src.models.routing import PatternDetection, CustomerRiskProfile, PatternType, FlagSeverity
 from src.persistence.database import VehicleDB, DamageDB, CustomerDB
 
 logger = logging.getLogger(__name__)
@@ -105,21 +105,12 @@ class PatternRecognitionService:
             avg_days_between = sum(time_between) / len(time_between) if time_between else 0
 
             return PatternDetection(
-                pattern_type="frequent_damage",
-                severity="high",
-                confidence=0.9,
-                description=f"{len(recent_damages)} damages in last 90 days",
-                evidence={
-                    "damage_count": len(recent_damages),
-                    "time_window_days": 90,
-                    "avg_days_between_damages": round(avg_days_between, 1),
-                    "damage_dates": [d.date.isoformat() for d in recent_damages[:5]]
-                },
-                recommendations=[
-                    "Rotate vehicle out of high-risk location",
-                    "Inspect vehicle for underlying issues",
-                    "Consider customer behavior analysis"
-                ]
+                pattern_type=PatternType.FREQUENT_DAMAGE,
+                details=f"{len(recent_damages)} damages in last 90 days (avg {round(avg_days_between, 1)} days between incidents)",
+                threshold_exceeded=True,
+                threshold_config="3+ damages in 90 days",
+                severity=FlagSeverity.HIGH,
+                impact_on_routing=True
             )
 
         return None
@@ -145,22 +136,14 @@ class PatternRecognitionService:
 
         # If 50%+ of damages at one location, flag it
         if max_count >= 2 and max_count / len(damages) >= 0.5:
+            percentage = round(100 * max_count / len(damages), 1)
             return PatternDetection(
-                pattern_type="location_correlation",
-                severity="medium",
-                confidence=0.85,
-                description=f"{max_count}/{len(damages)} damages at {max_location}",
-                evidence={
-                    "primary_location": max_location,
-                    "damage_count_at_location": max_count,
-                    "total_damages": len(damages),
-                    "percentage": round(100 * max_count / len(damages), 1)
-                },
-                recommendations=[
-                    f"Rotate vehicle away from {max_location}",
-                    "Investigate location-specific risks",
-                    "Review parking guidance for this location"
-                ]
+                pattern_type=PatternType.LOCATION_CORRELATION,
+                details=f"{max_count}/{len(damages)} damages at {max_location} ({percentage}% of total)",
+                threshold_exceeded=True,
+                threshold_config="50%+ damages at single location",
+                severity=FlagSeverity.WARNING,
+                impact_on_routing=True
             )
 
         return None
@@ -182,21 +165,14 @@ class PatternRecognitionService:
 
         # If 60%+ same type, flag it
         if max_count >= 3 and max_count / len(damages) >= 0.6:
+            percentage = round(100 * max_count / len(damages), 1)
             return PatternDetection(
-                pattern_type="damage_type_pattern",
-                severity="low",
-                confidence=0.75,
-                description=f"Repeated {max_type} damage ({max_count} times)",
-                evidence={
-                    "damage_type": max_type,
-                    "occurrence_count": max_count,
-                    "total_damages": len(damages),
-                    "percentage": round(100 * max_count / len(damages), 1)
-                },
-                recommendations=[
-                    f"Review {max_type} vulnerability for this vehicle model",
-                    "Check if specific customer behavior pattern exists"
-                ]
+                pattern_type=PatternType.SAME_DAMAGE_TYPE,
+                details=f"Repeated {max_type} damage: {max_count} occurrences ({percentage}% of total)",
+                threshold_exceeded=True,
+                threshold_config="60%+ same damage type",
+                severity=FlagSeverity.INFO,
+                impact_on_routing=False
             )
 
         return None
@@ -261,23 +237,27 @@ class PatternRecognitionService:
         if damage_count >= 3:
             risk_factors.append(f"Multiple incidents: {damage_count} damages")
 
-        # Generate recommendations
+        # Generate recommendation (singular)
         recommendations = self._generate_customer_recommendations(
             risk_score=risk_score,
             is_frequent_claimer=is_frequent_claimer,
             damage_rate=damage_rate
         )
+        recommendation = "; ".join(recommendations) if recommendations else None
+
+        # Disputed claims (check if customer has this field)
+        disputed_claims = getattr(customer, 'disputed_claims', 0)
 
         return CustomerRiskProfile(
             customer_id=customer_id,
-            total_damages=damage_count,
-            total_cost_eur=total_cost,
-            damage_rate_percent=round(damage_rate, 2),
-            is_frequent_claimer=is_frequent_claimer,
             risk_score=round(risk_score, 1),
+            total_rentals=total_rentals,
+            damages_reported=damage_count,
+            damage_rate_percent=round(damage_rate, 2),
+            disputed_claims=disputed_claims,
+            is_high_risk=(risk_score >= 7.0),
             risk_factors=risk_factors,
-            recommendations=recommendations,
-            analysis_date=datetime.now()
+            recommendation=recommendation
         )
 
     def _calculate_risk_score(
@@ -362,14 +342,14 @@ class PatternRecognitionService:
         """Create neutral profile for customers with no history."""
         return CustomerRiskProfile(
             customer_id=customer_id,
-            total_damages=0,
-            total_cost_eur=0.0,
-            damage_rate_percent=0.0,
-            is_frequent_claimer=False,
             risk_score=0.0,
+            total_rentals=0,
+            damages_reported=0,
+            damage_rate_percent=0.0,
+            disputed_claims=0,
+            is_high_risk=False,
             risk_factors=[],
-            recommendations=["New customer - no history available"],
-            analysis_date=datetime.now()
+            recommendation="New customer - no history available"
         )
 
     def get_vehicle_health_score(self, vehicle_id: str) -> Tuple[float, str]:

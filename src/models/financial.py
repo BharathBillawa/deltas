@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class LaborType(str, Enum):
@@ -62,13 +62,13 @@ class CostEstimate(BaseModel):
     total_eur: float = Field(ge=0, description="Final cost to customer")
 
     # Metadata
-    estimation_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    estimation_timestamp: datetime = Field(default_factory=datetime.now)
     estimation_method: str = Field(default="automated")
     confidence_score: float = Field(default=0.8, ge=0.0, le=1.0)
     notes: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "claim_id": "CLM-2026-001",
                 "labor_hours": 0.8,
@@ -82,6 +82,9 @@ class CostEstimate(BaseModel):
                 "total_eur": 165
             }
         }
+
+
+    )
 
 
 class DepreciationCalculation(BaseModel):
@@ -114,7 +117,7 @@ class Invoice(BaseModel):
     """
     invoice_id: str
     claim_id: str
-    invoice_date: datetime = Field(default_factory=datetime.utcnow)
+    invoice_date: datetime = Field(default_factory=datetime.now)
 
     # Customer details
     customer_id: str
@@ -147,8 +150,8 @@ class Invoice(BaseModel):
     depreciation_notes: Optional[str] = None
     additional_notes: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "invoice_id": "INV-2026-001",
                 "claim_id": "CLM-2026-001",
@@ -160,6 +163,9 @@ class Invoice(BaseModel):
         }
 
 
+    )
+
+
 class RetirementAnalysis(BaseModel):
     """
     Strategic analysis for repair vs auction decision.
@@ -167,7 +173,7 @@ class RetirementAnalysis(BaseModel):
     Part of fleet intelligence - not just tactical claims processing.
     """
     vehicle_id: str
-    analysis_date: datetime = Field(default_factory=datetime.utcnow)
+    analysis_date: datetime = Field(default_factory=datetime.now)
 
     # Current damage
     current_damage_repair_cost_eur: float
@@ -195,8 +201,8 @@ class RetirementAnalysis(BaseModel):
     # Confidence
     confidence_score: float = Field(default=0.7, ge=0.0, le=1.0)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "vehicle_id": "BMW-530-2018-009",
                 "current_damage_repair_cost_eur": 890,
@@ -205,3 +211,6 @@ class RetirementAnalysis(BaseModel):
                 "net_benefit_auction_eur": 15000
             }
         }
+
+
+    )

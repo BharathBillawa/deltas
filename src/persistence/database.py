@@ -20,7 +20,7 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
 from src.config.settings import settings
@@ -69,8 +69,8 @@ class VehicleDB(Base):
     rental_history_summary = Column(JSON)
 
     notes = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
     damages = relationship("DamageDB", back_populates="vehicle")
@@ -101,7 +101,7 @@ class DamageDB(Base):
     insurance_claim = Column(Boolean, default=False)
 
     flags = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
     # Relationships
     vehicle = relationship("VehicleDB", back_populates="damages")
@@ -118,7 +118,7 @@ class ClaimDB(Base):
     customer_id = Column(String, nullable=False, index=True)
     rental_agreement_id = Column(String, nullable=False)
 
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = Column(DateTime, nullable=False, default=datetime.now)
     return_location = Column(String, nullable=False)
 
     # Damage assessment (JSON for flexibility)
@@ -141,8 +141,8 @@ class ClaimDB(Base):
     workflow_completed_at = Column(DateTime)
     processing_time_seconds = Column(Float)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
     vehicle = relationship("VehicleDB", back_populates="claims")
@@ -186,9 +186,9 @@ class ApprovalQueueDB(Base):
     decision_notes = Column(Text)
     decision_timestamp = Column(DateTime)
 
-    timestamp_added = Column(DateTime, default=datetime.utcnow, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    timestamp_added = Column(DateTime, default=datetime.now, index=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
     claim = relationship("ClaimDB", back_populates="approval_queue_item")
@@ -217,8 +217,8 @@ class CustomerDB(Base):
     risk_factors = Column(JSON, default=list)
 
     notes = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 # === Event Log Table ===
@@ -229,7 +229,7 @@ class EventLogDB(Base):
 
     event_id = Column(String, primary_key=True, index=True)
     event_type = Column(String, nullable=False, index=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, nullable=False, default=datetime.now, index=True)
     priority = Column(String, default="normal")
 
     source_service = Column(String, nullable=False)
@@ -243,12 +243,12 @@ class EventLogDB(Base):
     correlation_id = Column(String, index=True)
     tags = Column(JSON, default=list)
 
-    processed_at = Column(DateTime, default=datetime.utcnow)
+    processed_at = Column(DateTime, default=datetime.now)
     processing_duration_ms = Column(Float)
     subscribers_notified = Column(Integer, default=0)
     errors = Column(JSON, default=list)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
 
 # === Database initialization ===

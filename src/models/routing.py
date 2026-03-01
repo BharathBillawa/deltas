@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class RoutingDecision(str, Enum):
@@ -79,7 +79,7 @@ class ValidationResult(BaseModel):
     Determines if claim requires human review or can be auto-approved.
     """
     claim_id: str
-    validation_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    validation_timestamp: datetime = Field(default_factory=datetime.now)
 
     # Overall result
     is_valid: bool = Field(default=True)
@@ -105,8 +105,8 @@ class ValidationResult(BaseModel):
     # Confidence
     confidence_score: float = Field(default=0.8, ge=0.0, le=1.0)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "claim_id": "CLM-2026-001",
                 "is_valid": True,
@@ -119,6 +119,9 @@ class ValidationResult(BaseModel):
         }
 
 
+    )
+
+
 class ApprovalQueueItem(BaseModel):
     """
     Item in human approval queue.
@@ -127,7 +130,7 @@ class ApprovalQueueItem(BaseModel):
     """
     queue_id: str
     claim_id: str
-    timestamp_added: datetime = Field(default_factory=datetime.utcnow)
+    timestamp_added: datetime = Field(default_factory=datetime.now)
 
     # Claim summary
     vehicle_id: str
@@ -151,8 +154,8 @@ class ApprovalQueueItem(BaseModel):
     status: str = Field(default="pending_review")
     sla_deadline: Optional[datetime] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "queue_id": "Q-2026-001",
                 "claim_id": "CLM-2026-002",
@@ -165,12 +168,15 @@ class ApprovalQueueItem(BaseModel):
         }
 
 
+    )
+
+
 class ApprovalDecision(BaseModel):
     """Human reviewer's decision on a claim."""
     queue_id: str
     claim_id: str
     reviewer_id: str
-    decision_timestamp: datetime = Field(default_factory=datetime.utcnow)
+    decision_timestamp: datetime = Field(default_factory=datetime.now)
 
     # Decision
     approved: bool
@@ -201,8 +207,8 @@ class CustomerRiskProfile(BaseModel):
     # Recommendation
     recommendation: Optional[str] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "customer_id": "CUST-RISK-001",
                 "risk_score": 7.8,
@@ -213,3 +219,6 @@ class CustomerRiskProfile(BaseModel):
                 "recommendation": "Higher deposit, premium insurance required"
             }
         }
+
+
+    )

@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class EventType(str, Enum):
@@ -57,7 +57,7 @@ class BaseEvent(BaseModel):
     """
     event_id: str = Field(..., description="Unique event identifier")
     event_type: EventType
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now)
     priority: EventPriority = Field(default=EventPriority.NORMAL)
 
     # Source
@@ -76,8 +76,8 @@ class BaseEvent(BaseModel):
     correlation_id: Optional[str] = Field(default=None, description="For tracing related events")
     tags: list[str] = Field(default_factory=list)
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "event_id": "evt_2026_001",
                 "event_type": "claim_received",
@@ -86,6 +86,9 @@ class BaseEvent(BaseModel):
                 "timestamp": "2026-02-28T10:30:00Z"
             }
         }
+
+
+    )
 
 
 class ClaimReceivedEvent(BaseEvent):
@@ -161,7 +164,7 @@ class EventLog(BaseModel):
     All events are persisted for compliance and debugging.
     """
     event: BaseEvent
-    processed_at: datetime = Field(default_factory=datetime.utcnow)
+    processed_at: datetime = Field(default_factory=datetime.now)
     processing_duration_ms: Optional[float] = None
     subscribers_notified: int = Field(default=0)
     errors: list[str] = Field(default_factory=list)
