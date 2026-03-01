@@ -436,6 +436,15 @@ def _display_workflow_result(result):
 
     console.print(table)
 
+    # Show AI reasoning if available
+    if hasattr(result, 'ai_cost_reasoning') and result.ai_cost_reasoning:
+        console.print("\n[bold cyan]🤖 AI Cost Analysis:[/bold cyan]")
+        console.print(f"[dim]{result.ai_cost_reasoning}[/dim]")
+
+    if hasattr(result, 'ai_validation_reasoning') and result.ai_validation_reasoning:
+        console.print("\n[bold cyan]🤖 AI Validation Analysis:[/bold cyan]")
+        console.print(f"[dim]{result.ai_validation_reasoning}[/dim]")
+
 
 if __name__ == "__main__":
     app()
