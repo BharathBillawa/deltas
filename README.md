@@ -8,7 +8,8 @@ Deltas is an end-to-end AI-powered workflow system that automates damage claim p
 
 **Key Features:**
 - 🤖 **AI-Powered Workflow** - LangGraph agents with Deep Agents patterns
-- 📊 **Event-Driven Architecture** - Decoupled, scalable, production-ready
+- � **Tensorlake Integration** - Document processing for damage assessment extraction
+- �📊 **Event-Driven Architecture** - Decoupled, scalable, production-ready
 - ✅ **Human-in-the-Loop** - Persistent approval queue for exception handling
 - 🎯 **Intelligent Routing** - Auto-approve routine claims, escalate complex cases
 - 📈 **Full Observability** - Event tracking, structured logging, metrics
@@ -25,7 +26,7 @@ Deltas is an end-to-end AI-powered workflow system that automates damage claim p
 ### Core Components
 1. **Agents** - Intake, Cost Estimation, Invoice Generation, Validation, Routing, Notification
 2. **Workflow** - LangGraph-based orchestration with checkpoints
-3. **Services** - Event bus, pricing engine, finance system integration
+3. **Services** - Event bus, pricing engine, Tensorlake document processing, finance integration
 4. **Persistence** - Approval queue, audit trail, claim history
 
 ## Quick Start

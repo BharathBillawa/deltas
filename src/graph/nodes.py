@@ -28,6 +28,7 @@ from src.services.pricing_service import PricingService
 from src.services.depreciation_service import DepreciationService
 from src.services.pattern_recognition_service import PatternRecognitionService
 from src.services.event_logger import EventLogger
+from src.services.tensorlake_service import TensorlakeService
 from src.persistence.database import VehicleDB, CustomerDB
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,34 @@ def intake_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
             logger.info(f"Loaded customer: {customer.customer_id} (risk score: {customer.risk_score})")
         else:
             logger.debug(f"Customer {claim.customer_id} not in database (new customer)")
+
+        # Use Tensorlake to extract/validate damage assessment from photos
+        current_claim = updates.get("claim", claim)
+        if current_claim.damage_assessment and current_claim.damage_assessment.photos:
+            try:
+                tensorlake = TensorlakeService()
+                logger.info(
+                    f"Using Tensorlake to validate damage assessment for claim {claim.claim_id} "
+                    f"({len(current_claim.damage_assessment.photos)} photos)"
+                )
+                # Extract assessment from photos for validation/enrichment
+                extracted_assessment = tensorlake.extract_from_images(
+                    image_paths=current_claim.damage_assessment.photos,
+                    vehicle_id=claim.vehicle_id,
+                    metadata={
+                        "claim_id": claim.claim_id,
+                        "return_location": claim.return_location
+                    }
+                )
+                logger.info(
+                    f"Tensorlake extraction: {extracted_assessment.damage_type.value} "
+                    f"({extracted_assessment.severity.value}) at {extracted_assessment.location.value}"
+                )
+                # In production, you might merge/validate extracted vs submitted assessment
+                # For now, we log the extraction to show Tensorlake integration
+            except Exception as e:
+                logger.warning(f"Tensorlake extraction failed: {e}")
+                # Continue workflow - claim already has assessment
 
         # Emit ClaimReceived event
         event_logger = EventLogger(db)
