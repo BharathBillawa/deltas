@@ -1,171 +1,187 @@
-# Deltas - AI-Powered Damage Claims Automation
+# Deltas
 
-> Production-grade automation system for car rental damage claim processing
+AI-powered damage claims automation for car rental operations.
 
-## Overview
+Automates the full claim lifecycle — damage intake, cost estimation, validation, and routing — using a LangGraph workflow with human-in-the-loop approval for edge cases.
 
-Deltas is an end-to-end AI-powered workflow system that automates damage claim processing for car rental operations. It combines LangGraph orchestration with event-driven architecture to handle damage assessment, cost estimation, invoice generation, and intelligent routing with human-in-the-loop approval.
+## Why
 
-**Key Features:**
-- 🤖 **AI-Powered Workflow** - LangGraph agents with Deep Agents patterns
-- � **Tensorlake Integration** - Document processing for damage assessment extraction
-- �📊 **Event-Driven Architecture** - Decoupled, scalable, production-ready
-- ✅ **Human-in-the-Loop** - Persistent approval queue for exception handling
-- 🎯 **Intelligent Routing** - Auto-approve routine claims, escalate complex cases
-- 📈 **Full Observability** - Event tracking, structured logging, metrics
-- 🔧 **Multiple Interfaces** - CLI, REST API, Web Operations Console
+Damage claim processing in car rental is manual, inconsistent, and slow. Finance teams spend hours on routine claims that could be auto-approved, while genuinely complex cases (luxury vehicles, repeat offenders, fleet retirement decisions) get the same treatment.
+
+Deltas uses deterministic business rules for the 70%+ of claims that are straightforward, and brings in LLM reasoning only for the ambiguous cases — cost edge cases near approval thresholds, pattern detection across vehicle history, multi-factor risk scoring.
 
 ## Architecture
 
-### Hybrid Framework Approach
-- **LangGraph** for workflow orchestration and state management
-- **Deep Agents patterns** for agent implementation and context management
-- **Event Bus** for loose coupling and extensibility
-- **SQLite/PostgreSQL** for persistent approval queue
+```
+intake → cost_estimation → validation → routing → [auto_complete | human_review]
+```
 
-### Core Components
-1. **Agents** - Intake, Cost Estimation, Invoice Generation, Validation, Routing, Notification
-2. **Workflow** - LangGraph-based orchestration with checkpoints
-3. **Services** - Event bus, pricing engine, Tensorlake document processing, finance integration
-4. **Persistence** - Approval queue, audit trail, claim history
+**LangGraph** orchestrates the workflow with checkpoint-based state management. Each node delegates to pure Python services (testable without an LLM), wrapped by agents that add AI reasoning when deterministic rules aren't sufficient.
+
+```
+┌─────────────────────────────────────────────────┐
+│                 LangGraph Workflow               │
+│   intake → cost → validate → route → complete    │
+├─────────────────────────────────────────────────┤
+│               AI Agents (LLM layer)              │
+│   CostEstimatorAgent    ValidatorAgent           │
+├─────────────────────────────────────────────────┤
+│            Services (deterministic)              │
+│   Pricing · Depreciation · PatternRecognition    │
+│   FleetAnalytics · Approval · EventLogger        │
+│   TensorlakeService (document processing)        │
+├─────────────────────────────────────────────────┤
+│              Persistence (SQLAlchemy)             │
+│   Approval queue · Event log · Claim history     │
+└─────────────────────────────────────────────────┘
+```
+
+Key design decisions:
+- **Services are pure Python** — no LLM dependency, fully unit-testable
+- **Agents wrap services** — add LLM reasoning only at decision boundaries
+- **Structured JSON output** — LLM returns `{"decision", "reasoning", "risk_level"}`, not free text
+- **Human-in-the-loop** — LangGraph `interrupt_before` with persistent approval queue
+- **Repository pattern** — SQLite now, PostgreSQL-ready
 
 ## Quick Start
 
-### Prerequisites
-- Python 3.11+
-- Google Gemini API key
-
-### Installation
-
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd deltas
+git clone <repository-url> && cd deltas
 
-# Install dependencies with uv (recommended)
-uv sync
+# Install
+uv sync            # or: pip install -e .
 
-# Or with pip
-pip install -e .
-
-# Set up environment
+# Configure
 cp .env.example .env
-# Edit .env and add your GOOGLE_API_KEY
+# Add your GOOGLE_API_KEY to .env
+
+# Initialize database
+python scripts/init_database.py
+
+# Run tests
+pytest
 ```
 
-### Usage
+### CLI
 
-**CLI:**
 ```bash
-# Process a damage claim
-deltas process --claim-id ABC123
+# Process a claim from a scenario file
+deltas process data/sample_scenarios/scenario_01_minor_scratch_auto_approve.json
 
-# List pending approvals
-deltas queue list --status pending
+# View approval queue
+deltas queue
 
-# Approve a claim
-deltas approve --claim-id ABC123
+# Approve / reject
+deltas approve CLM-001 --reviewer "john.doe"
+deltas reject CLM-002 --reason "Insufficient documentation"
+
+# Check claim status and event history
+deltas status CLM-001
+deltas events CLM-001
+
+# Fleet-wide statistics
+deltas stats
 ```
 
-**API Server:**
+### Web Console
+
 ```bash
-# Start the API server
 uvicorn src.api.main:app --reload
-
-# API docs available at http://localhost:8000/docs
+# http://localhost:8000
 ```
 
-**Web Operations Console:**
-```bash
-# Start the web dashboard
-uvicorn src.api.main:app --reload
+Dashboard, claim submission, approval queue, and analytics — built with HTMX + Tailwind CSS.
 
-# Dashboard available at http://localhost:8000
-```
+### REST API
+
+Same server, JSON endpoints under `/api/`:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/claims/` | Submit a new claim |
+| `GET /api/claims/{id}` | Claim status |
+| `GET /api/queue/` | Approval queue |
+| `POST /api/queue/{id}/approve` | Approve claim |
+| `POST /api/queue/{id}/reject` | Reject claim |
+| `GET /api/analytics/fleet-health` | Fleet health scores |
+| `GET /api/analytics/patterns` | Damage pattern analysis |
+| `GET /api/analytics/retirement-candidates` | Vehicles flagged for retirement |
+| `GET /api/events/{claim_id}` | Event audit trail |
+
+Interactive docs at `http://localhost:8000/docs`.
+
+## Test Scenarios
+
+Four scenarios in `data/sample_scenarios/` exercise the main routing paths:
+
+| Scenario | What it tests |
+|----------|---------------|
+| `scenario_01` | Minor scratch, low cost → auto-approve |
+| `scenario_02` | Luxury vehicle bumper damage → human review (cost > threshold) |
+| `scenario_03` | Frequent damage, pattern detection → escalation |
+| `scenario_04` | High cumulative cost, low fleet health → retirement recommendation |
 
 ## Project Structure
 
 ```
-deltas/
-├── src/
-│   ├── models/          # Pydantic data models
-│   ├── agents/          # LangGraph agents
-│   ├── graph/           # Workflow orchestration
-│   ├── services/        # Event bus, external services
-│   ├── persistence/     # Database, repositories
-│   ├── api/             # FastAPI routes
-│   ├── cli/             # CLI commands
-│   └── utils/           # Utilities, logging
-├── web/                 # Web UI (HTMX + Tailwind)
-├── data/                # Sample data, scenarios
-├── tests/               # Test suite
-└── docs/                # Documentation
+src/
+├── models/        # Pydantic V2 models (damage, financial, routing, events, state)
+├── agents/        # LLM-powered agents (base, cost_estimator, validator)
+├── graph/         # LangGraph workflow definition and node implementations
+├── services/      # Business logic (pricing, depreciation, patterns, fleet, approval)
+├── persistence/   # SQLAlchemy models + repository pattern
+├── api/           # FastAPI routes + Jinja2 templates
+├── cli/           # Typer CLI (8 commands)
+├── config/        # Pydantic Settings
+└── utils/         # Shared utilities
+data/
+├── vehicle_fleet/      # 12 vehicles with damage + service history
+├── pricing_database/   # German market repair costs (EUR)
+├── sample_scenarios/   # Test claim scenarios
+└── sample_damages/     # Damage record samples
+tests/                  # 192 tests, 64% coverage
 ```
 
 ## Development
 
 ```bash
-# Install development dependencies
+# Install dev dependencies
 uv sync --all-extras
 
 # Run tests
-pytest
+pytest                       # full suite
+pytest tests/test_agents/    # agent tests only
+pytest --cov=src             # with coverage
 
-# Format code
-black src/ tests/
-
-# Lint
+# Code quality
 ruff check src/ tests/
-
-# Type check
+black src/ tests/
 mypy src/
 ```
 
-## Technology Stack
+## Tech Stack
 
-**Core:**
-- LangChain & LangGraph - Agent orchestration
-- Google Gemini - LLM provider
-- Pydantic - Data validation & type safety
-- SQLAlchemy - Database ORM
+| Layer | Technology |
+|-------|------------|
+| Orchestration | LangGraph, LangChain |
+| LLM | Google Gemini |
+| Models | Pydantic V2 |
+| Database | SQLAlchemy + SQLite |
+| API | FastAPI, Uvicorn |
+| Web UI | HTMX, Tailwind CSS, Jinja2 |
+| CLI | Typer |
+| Document Processing | Tensorlake SDK (mock) |
+| Logging | structlog |
+| Testing | pytest, pytest-cov |
 
-**API & Web:**
-- FastAPI - REST API framework
-- HTMX + Tailwind CSS - Modern web UI
-- Uvicorn - ASGI server
+## Domain Data
 
-**CLI:**
-- Typer - Command-line interface
-
-**Testing:**
-- Pytest - Test framework
-- Coverage - Code coverage
-
-## Documentation
-
-- [Architecture Overview](docs/architecture/README.md)
-- [API Documentation](http://localhost:8000/docs) (when running)
-- [Deployment Guide](docs/architecture/deployment.md)
-
-## Use Cases
-
-This system is designed for car rental operations processing damage claims:
-- Small to medium rental companies (1000-10000 claims/month)
-- Enterprise fleet operators
-- Insurance integration scenarios
-- Multi-location rental networks
-
-**Automation Benefits:**
-- 70%+ reduction in processing time
-- Consistent cost estimation
-- Faster customer notifications
-- Reduced finance team workload
-- Comprehensive audit trail
+Pricing and thresholds use validated German market data:
+- **Labor rate**: EUR 202/hour (GDV/Dekra 2024)
+- **Auto-approve threshold**: EUR 500
+- **Fraud rate baseline**: ~10% (Insurance Information Institute)
+- **Depreciation**: Age + mileage-based part depreciation for fair customer billing
 
 ## License
 
-[Add your license here]
-
-## Author
-
-Built by BPOOJAR as a demonstration of production-grade AI automation engineering.
+MIT
