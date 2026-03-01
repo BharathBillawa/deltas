@@ -1,0 +1,43 @@
+{
+  "scenario_id": "SCENARIO-005",
+  "scenario_name": "Agent Demo - Pattern Detection with Borderline Cost",
+  "description": "Designed to trigger both CostEstimatorAgent and ValidatorAgent",
+  "expected_outcome": "human_review_required",
+  "test_type": "agent_reasoning_demo",
+  "damage_claim": {
+    "claim_id": "CLM-2026-AGENT-DEMO",
+    "timestamp": "2026-03-01T11:45:00Z",
+    "vehicle_id": "BMW-320-2021-007",
+    "customer_id": "CUST-PATTERN-001",
+    "rental_agreement_id": "RNT-2026-AGENT",
+    "return_location": "Munich_Airport",
+    "damage_assessment": {
+      "damage_type": "scratch",
+      "severity": "medium",
+      "location": "rear_bumper",
+      "description": "Medium scratch on rear bumper, third similar damage at Munich Airport this quarter",
+      "affected_parts": ["rear_bumper", "bumper_trim", "parking_sensor"],
+      "photos": ["agent_demo_001.jpg", "agent_demo_002.jpg"],
+      "inspector_id": "INSP-AI-DEMO",
+      "inspector_notes": "Customer has pattern of similar damages at same location. Cost is borderline."
+    }
+  },
+  "vehicle_context": {
+    "category": "Standard",
+    "year": 2021,
+    "mileage_km": 78000,
+    "previous_damages_count": 2,
+    "last_damage_date": "2026-01-15",
+    "cumulative_damage_ytd_eur": 1450,
+    "health_score": 6.8,
+    "service_up_to_date": true
+  },
+  "customer_context": {
+    "customer_type": "regular",
+    "rental_history_count": 8,
+    "previous_damage_claims": 2,
+    "disputed_claims": 0,
+    "vip_status": false
+  },
+  "notes": "This scenario is designed to trigger LLM reasoning: multiple affected parts + pattern at high-risk location"
+}

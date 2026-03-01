@@ -1,6 +1,10 @@
 """CLI entry point for the Deltas application."""
 
 import json
+import logging
+import warnings
+import sys
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -15,6 +19,15 @@ from src.graph.workflow import DamageClaimWorkflow
 from src.persistence.database import SessionLocal
 from src.services.event_logger import EventLogger
 
+# Suppress LangGraph checkpoint deserialization warnings
+warnings.filterwarnings("ignore")
+os.environ["PYTHONWARNINGS"] = "ignore"
+
+# Set cleaner logging for CLI (suppress INFO and below)
+logging.basicConfig(level=logging.WARNING, format="%(message)s")
+logging.getLogger("langgraph").setLevel(logging.ERROR)
+logging.getLogger("src").setLevel(logging.WARNING)
+
 app = typer.Typer(
     name="deltas",
     help="AI-powered damage claims automation system",
@@ -22,6 +35,19 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+class SuppressStderr:
+    """Context manager to suppress stderr output."""
+    def __enter__(self):
+        self._original_stderr = sys.stderr
+        sys.stderr = open(os.devnull, 'w')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stderr.close()
+        sys.stderr = self._original_stderr
+        return False
 
 
 @app.command()
@@ -66,7 +92,9 @@ def process(
         workflow = DamageClaimWorkflow(use_checkpointer=True)
 
         with console.status("[bold green]Processing workflow...", spinner="dots"):
-            result = workflow.process_claim(claim)
+            # Suppress LangGraph checkpoint warnings during execution
+            with SuppressStderr():
+                result = workflow.process_claim(claim)
 
         # Display result
         console.print()

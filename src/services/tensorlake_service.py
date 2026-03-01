@@ -110,7 +110,7 @@ class TensorlakeService:
 
         if not scenario_file:
             # Return a generic damage assessment
-            logger.warning(f"No scenario found for {input_source}, returning generic assessment")
+            logger.info(f"No scenario found for {input_source}, returning generic assessment")
             return self._create_generic_assessment(metadata)
 
         # Load scenario
