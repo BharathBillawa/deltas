@@ -19,14 +19,20 @@ from src.graph.workflow import DamageClaimWorkflow
 from src.persistence.database import SessionLocal
 from src.services.event_logger import EventLogger
 
-# Suppress LangGraph checkpoint deserialization warnings
-warnings.filterwarnings("ignore")
-os.environ["PYTHONWARNINGS"] = "ignore"
+# Configure cleaner logging for CLI
+# Show WARNING and above (includes errors), hide INFO/DEBUG
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(message)s"
+)
 
-# Set cleaner logging for CLI (suppress INFO and below)
-logging.basicConfig(level=logging.WARNING, format="%(message)s")
-logging.getLogger("langgraph").setLevel(logging.ERROR)
-logging.getLogger("src").setLevel(logging.WARNING)
+# Reduce noise from specific loggers
+logging.getLogger("langgraph.checkpoint.base").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+
+# Note: LangGraph checkpoint warnings print to stderr directly (not via logging)
+# These are informational warnings about serialization and can be safely ignored
+# They don't affect functionality and will be addressed in future LangGraph versions
 
 app = typer.Typer(
     name="deltas",
@@ -35,19 +41,6 @@ app = typer.Typer(
 )
 
 console = Console()
-
-
-class SuppressStderr:
-    """Context manager to suppress stderr output."""
-    def __enter__(self):
-        self._original_stderr = sys.stderr
-        sys.stderr = open(os.devnull, 'w')
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stderr.close()
-        sys.stderr = self._original_stderr
-        return False
 
 
 @app.command()
@@ -92,9 +85,7 @@ def process(
         workflow = DamageClaimWorkflow(use_checkpointer=True)
 
         with console.status("[bold green]Processing workflow...", spinner="dots"):
-            # Suppress LangGraph checkpoint warnings during execution
-            with SuppressStderr():
-                result = workflow.process_claim(claim)
+            result = workflow.process_claim(claim)
 
         # Display result
         console.print()
@@ -431,6 +422,10 @@ def _parse_scenario_file(path: Path) -> DamageClaim:
 
 def _display_workflow_result(result):
     """Display workflow result in a nice format."""
+    # Check if AI was used
+    ai_cost_used = hasattr(result, 'ai_cost_reasoning') and result.ai_cost_reasoning
+    ai_validation_used = hasattr(result, 'ai_validation_reasoning') and result.ai_validation_reasoning
+
     table = Table(title="Workflow Result")
     table.add_column("Field", style="cyan")
     table.add_column("Value", style="green")
@@ -438,6 +433,17 @@ def _display_workflow_result(result):
     # Status
     status_icon = "✓" if result.workflow_complete else "⏸"
     table.add_row("Status", f"{status_icon} {'Complete' if result.workflow_complete else 'Paused'}")
+
+    # Decision mode indicator
+    if ai_cost_used or ai_validation_used:
+        modes = []
+        if ai_cost_used:
+            modes.append("Cost")
+        if ai_validation_used:
+            modes.append("Validation")
+        table.add_row("Decision Mode", f"🤖 AI-Powered ({', '.join(modes)})")
+    else:
+        table.add_row("Decision Mode", "📋 Rule-Based")
 
     # Approval status
     if result.approval_granted is not None:
@@ -465,13 +471,20 @@ def _display_workflow_result(result):
     console.print(table)
 
     # Show AI reasoning if available
-    if hasattr(result, 'ai_cost_reasoning') and result.ai_cost_reasoning:
+    ai_cost_used = hasattr(result, 'ai_cost_reasoning') and result.ai_cost_reasoning
+    ai_validation_used = hasattr(result, 'ai_validation_reasoning') and result.ai_validation_reasoning
+
+    if ai_cost_used:
         console.print("\n[bold cyan]🤖 AI Cost Analysis:[/bold cyan]")
         console.print(f"[dim]{result.ai_cost_reasoning}[/dim]")
 
-    if hasattr(result, 'ai_validation_reasoning') and result.ai_validation_reasoning:
+    if ai_validation_used:
         console.print("\n[bold cyan]🤖 AI Validation Analysis:[/bold cyan]")
         console.print(f"[dim]{result.ai_validation_reasoning}[/dim]")
+
+    # Show decision mode explanation if no AI was used
+    if not ai_cost_used and not ai_validation_used:
+        console.print("\n[dim]💡 Rule-based decision: No edge cases detected, using deterministic logic[/dim]")
 
 
 if __name__ == "__main__":
