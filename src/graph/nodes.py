@@ -30,6 +30,8 @@ from src.services.pattern_recognition_service import PatternRecognitionService
 from src.services.event_logger import EventLogger
 from src.services.tensorlake_service import TensorlakeService
 from src.persistence.database import VehicleDB, CustomerDB
+from src.agents.cost_estimator_agent import CostEstimatorAgent
+from src.agents.validator_agent import ValidatorAgent
 
 logger = logging.getLogger(__name__)
 
@@ -167,88 +169,44 @@ def intake_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
 
 def cost_estimation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     """
-    Cost estimation node: Calculate repair costs with depreciation.
+    Cost estimation node: LLM-powered cost estimation with reasoning.
+
+    Uses CostEstimatorAgent to wrap PricingService and DepreciationService
+    with LLM reasoning for edge cases.
 
     Args:
         state: Current workflow state
         db: Database session
 
     Returns:
-        Updated state fields with cost estimate
+        Updated state fields with cost estimate and optional AI reasoning
     """
-    logger.info(f"Cost estimation node: Processing claim {state.claim.claim_id}")
+    logger.info(f"Cost estimation node (Agent): Processing claim {state.claim.claim_id}")
 
     claim = state.claim
     updates: Dict[str, Any] = {}
 
     try:
-        # Initialize pricing service
-        pricing_service = PricingService()
-
-        # Get vehicle category
-        vehicle_category = "Standard"
+        # Build vehicle context for agent
+        vehicle_context = None
         if claim.vehicle_context:
-            vehicle_category = claim.vehicle_context.category.value
+            vehicle_context = {
+                "age_years": datetime.now().year - claim.vehicle_context.year,
+                "mileage_km": claim.vehicle_context.mileage_km,
+                "cumulative_damage_ytd": 0,  # Would fetch from DB in production
+                "recent_damage_count": 0,
+            }
 
-        # Calculate base cost
-        cost_estimate = pricing_service.calculate_cost(
-            claim_id=claim.claim_id,
-            damage_type=claim.damage_assessment.damage_type,
-            severity=claim.damage_assessment.severity,
-            vehicle_category=vehicle_category,
-            location=claim.return_location,
-            damage_location=claim.damage_assessment.location.value
-        )
-
-        # Apply depreciation for older vehicles
-        if claim.vehicle_context and claim.vehicle_context.year:
-            depreciation_service = DepreciationService()
-
-            # Check if depreciation should apply
-            if depreciation_service.should_apply_depreciation(
-                vehicle_year=claim.vehicle_context.year,
-                component=depreciation_service.infer_component_from_location(
-                    claim.damage_assessment.location.value
-                ),
-                min_age_years=2
-            ):
-                # Calculate depreciation
-                component = depreciation_service.infer_component_from_location(
-                    claim.damage_assessment.location.value
-                )
-                depreciation = depreciation_service.calculate(
-                    vehicle_id=claim.vehicle_id,
-                    vehicle_year=claim.vehicle_context.year,
-                    original_cost_eur=cost_estimate.subtotal_eur,
-                    component=component
-                )
-
-                # Update cost estimate with depreciation
-                cost_estimate = CostEstimate(
-                    claim_id=cost_estimate.claim_id,
-                    labor_hours=cost_estimate.labor_hours,
-                    labor_type=cost_estimate.labor_type,
-                    labor_rate_eur=cost_estimate.labor_rate_eur,
-                    labor_cost_eur=cost_estimate.labor_cost_eur,
-                    parts_cost_eur=cost_estimate.parts_cost_eur,
-                    category_multiplier=cost_estimate.category_multiplier,
-                    location_multiplier=cost_estimate.location_multiplier,
-                    subtotal_eur=cost_estimate.subtotal_eur,
-                    depreciation_applicable=True,
-                    depreciation_component=component,
-                    depreciation_factor=depreciation.depreciation_factor,
-                    depreciated_value_eur=depreciation.depreciated_value_eur,
-                    total_eur=depreciation.depreciated_value_eur,
-                    confidence_score=cost_estimate.confidence_score,
-                    notes=f"{cost_estimate.notes}; Depreciation applied ({depreciation.depreciation_factor:.0%})"
-                )
-
-                logger.info(
-                    f"Depreciation applied: €{cost_estimate.subtotal_eur:.2f} → "
-                    f"€{cost_estimate.total_eur:.2f}"
-                )
+        # Use agent for cost estimation
+        agent = CostEstimatorAgent(db, temperature=0.3)
+        cost_estimate, ai_reasoning = agent.estimate_cost(claim, vehicle_context)
 
         updates["cost_estimate"] = cost_estimate
+
+        # Store AI reasoning if available
+        if ai_reasoning:
+            updates["ai_cost_reasoning"] = ai_reasoning
+            logger.info(f"AI reasoning available for cost decision")
 
         # Emit CostEstimated event
         event_logger = EventLogger(db)
@@ -259,7 +217,7 @@ def cost_estimation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]
             parts_cost_eur=cost_estimate.parts_cost_eur
         )
 
-        logger.info(f"Cost estimate: €{cost_estimate.total_eur:.2f}")
+        logger.info(f"Cost estimate (Agent): €{cost_estimate.total_eur:.2f}")
         updates["next_step"] = "validation"
 
     except Exception as e:
@@ -280,171 +238,64 @@ def cost_estimation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]
 
 def validation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
     """
-    Validation node: Pattern recognition and business rules.
+    Validation node: LLM-powered validation with pattern reasoning.
+
+    Uses ValidatorAgent to wrap PatternRecognitionService with LLM reasoning
+    for ambiguous patterns and fraud detection.
 
     Args:
         state: Current workflow state
         db: Database session
 
     Returns:
-        Updated state fields with validation result
+        Updated state fields with validation result and optional AI reasoning
     """
-    logger.info(f"Validation node: Processing claim {state.claim.claim_id}")
+    logger.info(f"Validation node (Agent): Processing claim {state.claim.claim_id}")
 
     claim = state.claim
     cost_estimate = state.cost_estimate
     updates: Dict[str, Any] = {}
-    flags: list[ValidationFlag] = []
-    patterns = []
 
     try:
-        # Initialize pattern recognition
-        pattern_service = PatternRecognitionService(db)
-        event_logger = EventLogger(db)
+        # Build fleet context for agent (optional, enhances reasoning)
+        fleet_context = {
+            "location_damage_rate": "Medium",  # Would fetch from analytics in production
+            "avg_damage_cost": 450.0,
+            "customer_history": "No prior data"
+        }
 
-        # Analyze vehicle patterns
-        vehicle_patterns = pattern_service.analyze_vehicle_patterns(claim.vehicle_id)
-        patterns.extend(vehicle_patterns)
-
-        # Emit PatternDetected events
-        for pattern in vehicle_patterns:
-            event_logger.emit_pattern_detected(
-                claim_id=claim.claim_id,
-                pattern_type=pattern.pattern_type.value,
-                severity=pattern.severity.value,
-                description=pattern.details
-            )
-
-            # Add flag for each pattern
-            flags.append(ValidationFlag(
-                flag_type=f"pattern_{pattern.pattern_type.value}",
-                severity=pattern.severity,
-                description=pattern.details,
-                recommended_action="Review vehicle damage history"
-            ))
-
-        # Analyze customer risk
-        customer_risk = pattern_service.analyze_customer_risk(claim.customer_id)
-        updates["customer_risk_profile"] = customer_risk
-
-        if customer_risk.is_high_risk:
-            flags.append(ValidationFlag(
-                flag_type="high_risk_customer",
-                severity=FlagSeverity.HIGH,
-                description=f"Customer risk score: {customer_risk.risk_score}/10",
-                details={"risk_factors": customer_risk.risk_factors},
-                recommended_action=customer_risk.recommendation
-            ))
-
-        # Business rule: Cost threshold
-        if cost_estimate and cost_estimate.total_eur > AUTO_APPROVE_THRESHOLD_EUR:
-            flags.append(ValidationFlag(
-                flag_type="high_cost",
-                severity=FlagSeverity.WARNING,
-                description=(
-                    f"Cost €{cost_estimate.total_eur:.2f} exceeds "
-                    f"auto-approve threshold €{AUTO_APPROVE_THRESHOLD_EUR}"
-                ),
-                recommended_action="Manual cost review required"
-            ))
-
-        # Business rule: Luxury vehicle
-        if claim.vehicle_context and claim.vehicle_context.category in [
-            VehicleCategory.LUXURY, VehicleCategory.PREMIUM
-        ]:
-            flags.append(ValidationFlag(
-                flag_type="luxury_vehicle",
-                severity=FlagSeverity.INFO,
-                description=f"{claim.vehicle_context.category.value} vehicle requires additional scrutiny",
-                recommended_action="Verify damage assessment accuracy"
-            ))
-
-        # Business rule: Low vehicle health
-        if claim.vehicle_context and claim.vehicle_context.health_score < 5.0:
-            flags.append(ValidationFlag(
-                flag_type="low_vehicle_health",
-                severity=FlagSeverity.WARNING,
-                description=f"Vehicle health score: {claim.vehicle_context.health_score}/10",
-                recommended_action="Consider retirement analysis"
-            ))
-
-        # Business rule: Depreciation applied
-        if cost_estimate and cost_estimate.depreciation_applicable:
-            flags.append(ValidationFlag(
-                flag_type="depreciation_applied",
-                severity=FlagSeverity.INFO,
-                description=f"Depreciation factor: {cost_estimate.depreciation_factor:.0%}",
-                recommended_action="Verify depreciation calculation"
-            ))
-
-        # Calculate overall risk score
-        fraud_risk_score = customer_risk.risk_score if customer_risk else 0.0
-
-        # Patterns increase fraud risk
-        if len([p for p in patterns if p.severity in [FlagSeverity.HIGH, FlagSeverity.CRITICAL]]) > 0:
-            fraud_risk_score = min(10.0, fraud_risk_score + 2.0)
-
-        overall_risk_score = fraud_risk_score
-        if flags:
-            # Add 0.5 for each warning/high flag
-            high_flags = len([f for f in flags if f.severity in [FlagSeverity.WARNING, FlagSeverity.HIGH]])
-            overall_risk_score = min(10.0, overall_risk_score + high_flags * 0.5)
-
-        # Determine routing decision
-        can_auto_approve = True
-        routing_decision = RoutingDecision.AUTO_APPROVE
-        routing_reason = "All checks passed, within thresholds"
-        escalation_reason = None
-
-        # Check cost threshold
-        if cost_estimate and cost_estimate.total_eur > AUTO_APPROVE_THRESHOLD_EUR:
-            can_auto_approve = False
-            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
-            routing_reason = f"Cost €{cost_estimate.total_eur:.2f} exceeds threshold"
-            escalation_reason = EscalationReason.HIGH_COST
-
-        # Check pattern flags
-        elif len([p for p in patterns if p.impact_on_routing]) >= PATTERN_REVIEW_THRESHOLD:
-            can_auto_approve = False
-            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
-            routing_reason = f"Multiple patterns detected ({len(patterns)})"
-            escalation_reason = EscalationReason.PATTERN_DETECTED
-
-        # Check fraud risk
-        elif fraud_risk_score >= FRAUD_RISK_THRESHOLD:
-            can_auto_approve = False
-            routing_decision = RoutingDecision.INVESTIGATION_REQUIRED
-            routing_reason = f"High fraud risk score: {fraud_risk_score}/10"
-            escalation_reason = EscalationReason.FRAUD_RISK
-
-        # Check customer risk
-        elif customer_risk and customer_risk.is_high_risk:
-            can_auto_approve = False
-            routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
-            routing_reason = f"High-risk customer (score: {customer_risk.risk_score}/10)"
-            escalation_reason = EscalationReason.FRAUD_RISK
-
-        # Build validation result
-        validation_result = ValidationResult(
-            claim_id=claim.claim_id,
-            is_valid=True,
-            can_auto_approve=can_auto_approve,
-            routing_decision=routing_decision,
-            routing_reason=routing_reason,
-            escalation_reason=escalation_reason,
-            flags=flags,
-            patterns_detected=[p for p in patterns],
-            fraud_risk_score=fraud_risk_score,
-            overall_risk_score=overall_risk_score,
-            recommendations=[f.recommended_action for f in flags if f.recommended_action]
+        # Use agent for validation
+        agent = ValidatorAgent(db, temperature=0.3)
+        validation_result, ai_reasoning = agent.validate_claim(
+            claim,
+            cost_estimate.total_eur if cost_estimate else 0.0,
+            fleet_context
         )
 
         updates["validation_result"] = validation_result
+
+        # Store AI reasoning if available
+        if ai_reasoning:
+            updates["ai_validation_reasoning"] = ai_reasoning
+            logger.info(f"AI reasoning available for validation decision")
+
+        # Emit events for patterns if detected
+        if validation_result.flags:
+            event_logger = EventLogger(db)
+            for flag in validation_result.flags:
+                if "pattern" in flag.flag_type.lower():
+                    event_logger.emit_pattern_detected(
+                        claim_id=claim.claim_id,
+                        pattern_type=flag.flag_type,
+                        severity=flag.severity,
+                        description=flag.description
+                    )
+
         updates["next_step"] = "routing"
 
         logger.info(
-            f"Validation complete: can_auto_approve={can_auto_approve}, "
-            f"flags={len(flags)}, patterns={len(patterns)}"
+            f"Validation (Agent): {validation_result.routing_decision.value}, "
+            f"flags={len(validation_result.flags)}"
         )
 
     except Exception as e:
