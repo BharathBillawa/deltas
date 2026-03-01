@@ -133,7 +133,7 @@ To switch to production:
   - Set mock_mode=False
   - Implement _real_extract() with Tensorlake SDK
   - Configure Tensorlake API credentials
-  - Deploy in SIXT VPC for security
+  - Deploy in private VPC for security
     """)
 
 

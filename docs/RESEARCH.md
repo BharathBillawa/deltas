@@ -269,7 +269,7 @@ This document compiles industry knowledge about car rental damage claim processe
   - Depreciated value now: €350
   - Customer pays: €350 (not €600)
 
-**SIXT/European major practice:**
+**European major rental companies:**
 - Typically use Approach 1 for routine damage
 - Reserve right to charge full repair + diminished value for near-new vehicles
 - Disclose in rental agreement

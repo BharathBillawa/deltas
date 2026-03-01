@@ -5,8 +5,8 @@ Mock implementation simulating Tensorlake's document processing API.
 In production, this would integrate with the real Tensorlake SDK.
 
 Tensorlake Context:
-- Document processing partner (CTO directly involved)
-- Runs in SIXT VPC for data security
+- Document processing partner for car rental industry
+- Runs in private VPC for data security
 - Extracts structured data from images/documents
 """
 
