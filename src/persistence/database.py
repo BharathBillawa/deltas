@@ -174,6 +174,10 @@ class ApprovalQueueDB(Base):
     cumulative_damage_ytd_eur = Column(Float)
     pattern_summary = Column(Text)
 
+    # AI reasoning (if agents were used)
+    ai_cost_reasoning = Column(Text)
+    ai_validation_reasoning = Column(Text)
+
     # Queue management
     assigned_to = Column(String)
     priority = Column(Integer, default=3)  # 1=highest, 5=lowest

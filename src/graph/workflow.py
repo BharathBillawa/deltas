@@ -436,6 +436,11 @@ class DamageClaimWorkflow:
                     "priority": item.priority,
                     "flags": item.flags or [],
                     "timestamp_added": item.timestamp_added.isoformat() if item.timestamp_added else None,
+                    "vehicle_health_score": item.vehicle_health_score,
+                    "cumulative_damage_ytd_eur": item.cumulative_damage_ytd_eur,
+                    "pattern_summary": item.pattern_summary,
+                    "ai_cost_reasoning": item.ai_cost_reasoning,
+                    "ai_validation_reasoning": item.ai_validation_reasoning,
                 }
                 for item in pending
             ]

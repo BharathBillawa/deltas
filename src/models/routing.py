@@ -148,6 +148,16 @@ class ApprovalQueueItem(BaseModel):
     cumulative_damage_ytd_eur: Optional[float] = None
     pattern_summary: Optional[str] = None
 
+    # AI reasoning (if agents were used)
+    ai_cost_reasoning: Optional[str] = Field(
+        default=None,
+        description="LLM reasoning for cost estimation"
+    )
+    ai_validation_reasoning: Optional[str] = Field(
+        default=None,
+        description="LLM reasoning for validation decision"
+    )
+
     # Queue management
     assigned_to: Optional[str] = None
     priority: int = Field(default=3, ge=1, le=5, description="1=highest, 5=lowest")

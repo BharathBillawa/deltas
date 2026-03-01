@@ -359,7 +359,10 @@ def routing_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
             updates["next_step"] = "human_review"
 
             # Add to approval queue
-            queue_id = _add_to_approval_queue(db, claim, validation_result, cost_estimate)
+            queue_id = _add_to_approval_queue(
+                db, claim, validation_result, cost_estimate,
+                state.ai_cost_reasoning, state.ai_validation_reasoning
+            )
             if queue_id:
                 updates["queue_id"] = queue_id
 
@@ -396,7 +399,9 @@ def _add_to_approval_queue(
     db: Session,
     claim: DamageClaim,
     validation_result,
-    cost_estimate
+    cost_estimate,
+    ai_cost_reasoning: Optional[str] = None,
+    ai_validation_reasoning: Optional[str] = None
 ) -> Optional[str]:
     """
     Add claim to approval queue.
@@ -406,6 +411,8 @@ def _add_to_approval_queue(
         claim: The damage claim
         validation_result: Validation result with flags
         cost_estimate: Cost estimate
+        ai_cost_reasoning: Optional LLM reasoning for cost
+        ai_validation_reasoning: Optional LLM reasoning for validation
 
     Returns:
         Queue ID if added, None if already exists or error
@@ -484,7 +491,9 @@ def _add_to_approval_queue(
             status="pending_review",
             vehicle_health_score=vehicle_health,
             cumulative_damage_ytd_eur=cumulative_damage,
-            pattern_summary=pattern_summary
+            pattern_summary=pattern_summary,
+            ai_cost_reasoning=ai_cost_reasoning,
+            ai_validation_reasoning=ai_validation_reasoning
         )
 
         db.add(queue_entry)
