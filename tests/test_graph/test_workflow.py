@@ -6,7 +6,6 @@ Tests individual nodes and end-to-end workflow scenarios.
 
 import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
 
 from src.models.state import DamageClaimState
 from src.models.damage import (
@@ -15,8 +14,6 @@ from src.models.damage import (
     DamageType,
     DamageSeverity,
     VehicleLocation,
-    VehicleInfo,
-    VehicleCategory,
 )
 from src.models.financial import CostEstimate, LaborType
 from src.models.routing import ValidationResult, RoutingDecision
@@ -28,7 +25,7 @@ from src.graph.nodes import (
     AUTO_APPROVE_THRESHOLD_EUR,
 )
 from src.graph.workflow import DamageClaimWorkflow, create_workflow
-from src.persistence.database import SessionLocal, VehicleDB, CustomerDB, init_db
+from src.persistence.database import SessionLocal, VehicleDB
 
 
 @pytest.fixture

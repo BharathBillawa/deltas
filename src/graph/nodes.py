@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from src.models.state import DamageClaimState, WorkflowError
 from src.models.damage import DamageClaim, VehicleInfo, VehicleCategory
-from src.models.financial import CostEstimate, DepreciationComponent
+from src.models.financial import CostEstimate
 from src.models.routing import (
     ValidationResult,
     ValidationFlag,
@@ -312,7 +312,10 @@ def validation_node(state: DamageClaimState, db: Session) -> Dict[str, Any]:
             flags.append(ValidationFlag(
                 flag_type="high_cost",
                 severity=FlagSeverity.WARNING,
-                description=f"Cost €{cost_estimate.total_eur:.2f} exceeds auto-approve threshold €{AUTO_APPROVE_THRESHOLD_EUR}",
+                description=(
+                    f"Cost €{cost_estimate.total_eur:.2f} exceeds "
+                    f"auto-approve threshold €{AUTO_APPROVE_THRESHOLD_EUR}"
+                ),
                 recommended_action="Manual cost review required"
             ))
 

@@ -14,7 +14,6 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, List
-from datetime import datetime
 
 from src.models.damage import DamageAssessment, DamageType, DamageSeverity, VehicleLocation
 
@@ -181,7 +180,7 @@ class TensorlakeService:
                     claim_id = data.get("damage_claim", {}).get("claim_id", "")
                     if claim_id == input_source:
                         return scenario_file
-            except:
+            except (json.JSONDecodeError, KeyError, IOError):
                 continue
 
         return None

@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from src.models.damage import DamageClaim, DamageAssessment, DamageType, DamageSeverity, VehicleLocation
-from src.graph.workflow import DamageClaimWorkflow
+from src.graph.workflow import get_workflow
 
 router = APIRouter()
 
@@ -117,7 +117,7 @@ async def submit_claim(request: SubmitClaimRequest):
         )
 
         # Process through workflow
-        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow = get_workflow()
         result = workflow.process_claim(claim)
 
         # Build response
@@ -158,7 +158,7 @@ async def get_claim_status(claim_id: str):
     Returns workflow state, cost estimate, and routing decision.
     """
     try:
-        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow = get_workflow()
         workflow_status = workflow.get_status(claim_id)
 
         if not workflow_status:

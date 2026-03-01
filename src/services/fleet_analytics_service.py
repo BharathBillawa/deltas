@@ -7,7 +7,7 @@ Separate from PatternRecognitionService (which focuses on individual vehicles/cu
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -51,7 +51,7 @@ class FleetAnalyticsService:
                 "total_vehicles": 0,
                 "health_distribution": {},
                 "avg_health_score": 0.0,
-                "vehicles_needing_attention": 0,
+                "vehicles_needing_attention": [],
                 "total_damage_cost_ytd": 0.0,
                 "avg_damage_cost_per_vehicle": 0.0
             }
@@ -70,7 +70,14 @@ class FleetAnalyticsService:
         avg_damage_cost = total_damage_cost / total
 
         # Vehicles needing attention (health < 6)
-        needs_attention_count = sum(1 for v in vehicles if v.health_score < 6)
+        needs_attention = [
+            {
+                "vehicle_id": v.vehicle_id,
+                "health_score": v.health_score,
+                "cumulative_damage_ytd_eur": v.cumulative_damage_ytd_eur
+            }
+            for v in vehicles if v.health_score < 6
+        ]
 
         return {
             "total_vehicles": total,
@@ -81,7 +88,7 @@ class FleetAnalyticsService:
                 "poor": {"count": poor, "percent": round(100 * poor / total, 1)}
             },
             "avg_health_score": round(avg_score, 2),
-            "vehicles_needing_attention": needs_attention_count,
+            "vehicles_needing_attention": needs_attention,
             "total_damage_cost_ytd": round(total_damage_cost, 2),
             "avg_damage_cost_per_vehicle": round(avg_damage_cost, 2)
         }
@@ -138,7 +145,11 @@ class FleetAnalyticsService:
             avg_cost = stats["total_cost_eur"] / stats["damage_count"] if stats["damage_count"] > 0 else 0
 
             # Determine risk level
-            damage_rate_vs_avg = stats["damage_count"] / avg_damages_per_location if avg_damages_per_location > 0 else 1.0
+            damage_rate_vs_avg = (
+                stats["damage_count"] / avg_damages_per_location
+                if avg_damages_per_location > 0
+                else 1.0
+            )
 
             if damage_rate_vs_avg >= 1.5:
                 risk_level = "high"
@@ -148,7 +159,11 @@ class FleetAnalyticsService:
                 risk_level = "low"
 
             # Most common damage type
-            most_common_type = max(stats["damage_types"], key=stats["damage_types"].get) if stats["damage_types"] else "unknown"
+            most_common_type = (
+                max(stats["damage_types"], key=stats["damage_types"].get)
+                if stats["damage_types"]
+                else "unknown"
+            )
 
             # Convert risk level to numeric score
             risk_scores = {"low": 3.0, "medium": 6.0, "high": 9.0}
@@ -160,10 +175,11 @@ class FleetAnalyticsService:
             elif risk_level == "medium":
                 recommendation = f"Monitor {loc} for trends. Most common: {most_common_type}."
             else:
-                recommendation = f"Low risk location. Standard monitoring sufficient."
+                recommendation = "Low risk location. Standard monitoring sufficient."
 
             result.append({
                 "location": loc,
+                "damage_count": stats["damage_count"],
                 "total_damages": stats["damage_count"],
                 "total_cost_eur": round(stats["total_cost_eur"], 2),
                 "avg_cost_per_damage": round(avg_cost, 2),

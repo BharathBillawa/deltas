@@ -10,8 +10,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from src.graph.workflow import DamageClaimWorkflow
-from src.persistence.database import get_db, ApprovalQueueDB
+from src.graph.workflow import get_workflow
+from src.persistence.database import get_db
 from src.services.approval_service import ApprovalService
 
 router = APIRouter()
@@ -85,7 +85,7 @@ async def list_pending_approvals(
     Returns claims sorted by priority and timestamp.
     """
     try:
-        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow = get_workflow()
         pending = workflow.get_pending_approvals()
 
         # Limit results
@@ -191,7 +191,7 @@ async def approve_claim(
             )
 
         # Resume workflow with approval
-        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow = get_workflow()
 
         if not workflow.is_awaiting_approval(claim_id):
             raise HTTPException(
@@ -259,7 +259,7 @@ async def reject_claim(
             )
 
         # Resume workflow with rejection
-        workflow = DamageClaimWorkflow(use_checkpointer=True)
+        workflow = get_workflow()
 
         if not workflow.is_awaiting_approval(claim_id):
             raise HTTPException(

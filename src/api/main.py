@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes import claims, queue, analytics, events
 from src.persistence.database import init_db
 
+
 # Initialize database on startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -14,12 +14,10 @@ Features:
 import logging
 from datetime import datetime
 from functools import partial
-from typing import Dict, Any, Literal, Optional
+from typing import Dict, Any, Optional
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.types import interrupt, Command
-from sqlalchemy.orm import Session
 
 from src.models.state import DamageClaimState
 from src.models.damage import DamageClaim
@@ -302,7 +300,10 @@ class DamageClaimWorkflow:
                 queue_item.decision_timestamp = datetime.now()
                 queue_item.approved = approved
                 db.commit()
-                logger.info(f"Updated approval queue: {queue_item.queue_id} -> {'approved' if approved else 'rejected'}")
+                logger.info(
+                    f"Updated approval queue: {queue_item.queue_id} -> "
+                    f"{'approved' if approved else 'rejected'}"
+                )
 
         finally:
             db.close()

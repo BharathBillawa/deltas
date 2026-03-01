@@ -1,7 +1,6 @@
 """CLI entry point for the Deltas application."""
 
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -9,7 +8,6 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 from typing_extensions import Annotated
 
 from src.models.damage import DamageClaim, DamageAssessment, DamageType, DamageSeverity, VehicleLocation
@@ -59,7 +57,10 @@ def process(
         console.print(f"[green]✓[/green] Loaded claim: {claim.claim_id}")
         console.print(f"  Vehicle: {claim.vehicle_id}")
         console.print(f"  Customer: {claim.customer_id}")
-        console.print(f"  Damage: {claim.damage_assessment.damage_type.value} ({claim.damage_assessment.severity.value})")
+        console.print(
+            f"  Damage: {claim.damage_assessment.damage_type.value} "
+            f"({claim.damage_assessment.severity.value})"
+        )
 
         # Process through workflow
         workflow = DamageClaimWorkflow(use_checkpointer=True)
@@ -74,9 +75,12 @@ def process(
         # Check if waiting for approval
         if result.requires_human_approval and not result.workflow_complete:
             if wait:
-                console.print("\n[yellow]Claim requires human review. Use 'deltas approve' or 'deltas reject' to continue.[/yellow]")
+                console.print(
+                    "\n[yellow]Claim requires human review. "
+                    "Use 'deltas approve' or 'deltas reject' to continue.[/yellow]"
+                )
             else:
-                console.print(f"\n[yellow]⏸  Workflow paused - awaiting approval[/yellow]")
+                console.print("\n[yellow]⏸  Workflow paused - awaiting approval[/yellow]")
                 console.print(f"Use: [bold]deltas approve {claim.claim_id}[/bold] to approve")
 
     except Exception as e:
@@ -162,7 +166,7 @@ def approve(
                 notes=notes
             )
 
-        console.print(f"\n[green]✓[/green] Claim approved successfully")
+        console.print("\n[green]✓[/green] Claim approved successfully")
         console.print(f"Workflow complete: {result.workflow_complete}")
 
     except Exception as e:
@@ -197,7 +201,7 @@ def reject(
                 notes=reason
             )
 
-        console.print(f"\n[red]✗[/red] Claim rejected")
+        console.print("\n[red]✗[/red] Claim rejected")
         console.print(f"Workflow complete: {result.workflow_complete}")
 
     except Exception as e:
@@ -363,7 +367,7 @@ def _load_claim_from_scenario(scenario_path: str) -> Optional[DamageClaim]:
                 data = json.load(f)
                 if data.get("damage_claim", {}).get("claim_id") == scenario_path:
                     return _parse_scenario_file(scenario_file)
-        except:
+        except (json.JSONDecodeError, KeyError, IOError):
             continue
 
     return None
