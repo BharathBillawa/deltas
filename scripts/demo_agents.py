@@ -140,7 +140,7 @@ if __name__ == "__main__":
     print("LLM AGENTS DEMONSTRATION")
     print("="*70)
     print("\nShowing how agents add AI reasoning to edge cases...")
-    print("Note: If GEMINI_API_KEY not configured, falls back to deterministic logic")
+    print("Note: If GOOGLE_API_KEY not configured, falls back to deterministic logic")
 
     try:
         demo_cost_estimator()

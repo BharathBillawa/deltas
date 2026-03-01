@@ -47,13 +47,13 @@ class BaseAgent:
             ChatGoogleGenerativeAI instance or None if initialization fails
         """
         try:
-            if not settings.GEMINI_API_KEY:
-                logger.warning("GEMINI_API_KEY not configured. Agent will use fallback logic.")
+            if not settings.google_api_key:
+                logger.warning("GOOGLE_API_KEY not configured. Agent will use fallback logic.")
                 return None
 
             llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
-                google_api_key=settings.GEMINI_API_KEY,
+                model="gemini-3-flash-preview",
+                google_api_key=settings.google_api_key,
                 temperature=self.temperature,
                 convert_system_message_to_human=True,
             )
