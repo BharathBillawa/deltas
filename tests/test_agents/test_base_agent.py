@@ -4,7 +4,6 @@ Tests for BaseAgent.
 Tests LLM initialization, prompt creation, and fallback behavior.
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 
 from src.agents.base_agent import BaseAgent

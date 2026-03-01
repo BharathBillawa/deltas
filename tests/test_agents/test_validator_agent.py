@@ -23,7 +23,6 @@ from src.models.damage import (
 from src.models.routing import (
     ValidationResult,
     RoutingDecision,
-    ValidationFlag,
     FlagSeverity,
 )
 from src.persistence.database import SessionLocal

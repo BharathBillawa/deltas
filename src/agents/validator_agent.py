@@ -150,7 +150,9 @@ class ValidatorAgent(BaseAgent):
             ))
 
         # Business rule: Low vehicle health
-        if claim.vehicle_context and claim.vehicle_context.health_score is not None and claim.vehicle_context.health_score < 5.0:
+        if (claim.vehicle_context
+                and claim.vehicle_context.health_score is not None
+                and claim.vehicle_context.health_score < 5.0):
             flags.append(ValidationFlag(
                 flag_type="low_vehicle_health",
                 description=f"Vehicle health score: {claim.vehicle_context.health_score}/10",
@@ -191,7 +193,7 @@ class ValidatorAgent(BaseAgent):
         elif patterns.get("frequent_damage"):
             can_auto_approve = False
             routing_decision = RoutingDecision.HUMAN_REVIEW_REQUIRED
-            routing_reason = f"Multiple patterns detected"
+            routing_reason = "Multiple patterns detected"
             escalation_reason = EscalationReason.PATTERN_DETECTED
         elif fraud_risk_score >= 7.0:
             can_auto_approve = False
@@ -316,7 +318,10 @@ Respond ONLY with valid JSON, no other text."""
             "fraud_risk": f"{patterns.get('fraud_risk_score', 0.0):.2f}",
             "location_rate": fleet_context.get("location_damage_rate", "Unknown") if fleet_context else "Unknown",
             "avg_cost": f"€{fleet_context.get('avg_damage_cost', 0):.0f}" if fleet_context else "Unknown",
-            "customer_history": fleet_context.get("customer_history", "No prior data") if fleet_context else "No prior data",
+            "customer_history": (
+                fleet_context.get("customer_history", "No prior data")
+                if fleet_context else "No prior data"
+            ),
         }
 
         prompt = self._create_prompt(system_prompt, human_prompt)
@@ -396,7 +401,7 @@ Respond ONLY with valid JSON, no other text."""
         if text.startswith("```"):
             lines = text.split("\n")
             # Remove first line (```json) and last line (```)
-            lines = [l for l in lines if not l.strip().startswith("```")]
+            lines = [line for line in lines if not line.strip().startswith("```")]
             text = "\n".join(lines).strip()
 
         try:
