@@ -91,13 +91,19 @@ class ValidatorAgent(BaseAgent):
 
     def _detect_patterns(self, claim: DamageClaim) -> Dict[str, Any]:
         """Detect patterns using deterministic service."""
-        return self.pattern_service.analyze_claim_patterns(
-            vehicle_id=claim.vehicle_id,
-            customer_id=claim.customer_id,
-            damage_type=claim.damage_assessment.damage_type,
-            location=claim.damage_assessment.location,
-            return_location=claim.return_location
-        )
+        # Analyze vehicle patterns
+        vehicle_patterns = self.pattern_service.analyze_vehicle_patterns(claim.vehicle_id)
+
+        # Build simplified pattern dict
+        patterns = {
+            "frequent_damage": len(vehicle_patterns) >= 3,
+            "same_damage_type": any(p.pattern_type.value == "same_damage_type" for p in vehicle_patterns),
+            "location_correlation": any(p.pattern_type.value == "location_correlation" for p in vehicle_patterns),
+            "timing_pattern": "None",
+            "fraud_risk_score": min(len(vehicle_patterns) * 0.3, 1.0)
+        }
+
+        return patterns
 
     def _build_base_validation(
         self,
@@ -134,16 +140,23 @@ class ValidatorAgent(BaseAgent):
 
         # Determine routing
         if cost_estimate_eur > 500 or patterns.get("frequent_damage"):
-            routing = RoutingDecision.HUMAN_REVIEW
+            routing = RoutingDecision.HUMAN_REVIEW_REQUIRED
+            can_auto_approve = False
+            routing_reason = f"Requires human review: cost €{cost_estimate_eur:.2f}, patterns detected"
         else:
             routing = RoutingDecision.AUTO_APPROVE
+            can_auto_approve = True
+            routing_reason = f"Auto-approved: cost €{cost_estimate_eur:.2f} under threshold, no critical patterns"
 
         return ValidationResult(
+            claim_id=claim.claim_id,
             is_valid=True,
+            can_auto_approve=can_auto_approve,
             routing_decision=routing,
-            estimated_fraud_risk=patterns.get("fraud_risk_score", 0.0),
-            flags=flags,
-            requires_human_approval=(routing == RoutingDecision.HUMAN_REVIEW)
+            routing_reason=routing_reason,
+            fraud_risk_score=patterns.get("fraud_risk_score", 0.0) * 10,  # Scale to 0-10
+            overall_risk_score=patterns.get("fraud_risk_score", 0.0) * 10,
+            flags=flags
         )
 
     def _needs_llm_reasoning(
@@ -265,17 +278,35 @@ Provide your analysis and recommendation in 3-4 sentences."""
         # Check for override signals
         if "auto-approve" in reasoning_lower and "recommend" in reasoning_lower:
             # LLM recommends auto-approve despite flags
-            if base_result.routing_decision == RoutingDecision.HUMAN_REVIEW:
+            if base_result.routing_decision == RoutingDecision.HUMAN_REVIEW_REQUIRED:
                 logger.info("LLM recommends auto-approve, overriding base decision")
-                base_result.routing_decision = RoutingDecision.AUTO_APPROVE
-                base_result.requires_human_approval = False
+                # Create new ValidationResult with updated fields
+                base_result = ValidationResult(
+                    claim_id=base_result.claim_id,
+                    is_valid=base_result.is_valid,
+                    can_auto_approve=True,
+                    routing_decision=RoutingDecision.AUTO_APPROVE,
+                    routing_reason=f"{base_result.routing_reason} | LLM override: recommends auto-approval",
+                    fraud_risk_score=base_result.fraud_risk_score,
+                    overall_risk_score=base_result.overall_risk_score,
+                    flags=base_result.flags
+                )
 
         elif "human review" in reasoning_lower and "recommend" in reasoning_lower:
             # LLM recommends human review
             if base_result.routing_decision == RoutingDecision.AUTO_APPROVE:
                 logger.info("LLM recommends human review, overriding base decision")
-                base_result.routing_decision = RoutingDecision.HUMAN_REVIEW
-                base_result.requires_human_approval = True
+                # Create new ValidationResult with updated fields
+                base_result = ValidationResult(
+                    claim_id=base_result.claim_id,
+                    is_valid=base_result.is_valid,
+                    can_auto_approve=False,
+                    routing_decision=RoutingDecision.HUMAN_REVIEW_REQUIRED,
+                    routing_reason=f"{base_result.routing_reason} | LLM override: recommends human review",
+                    fraud_risk_score=base_result.fraud_risk_score,
+                    overall_risk_score=base_result.overall_risk_score,
+                    flags=base_result.flags
+                )
 
         explanation = f"AI Validation Analysis: {reasoning}"
 

@@ -6,6 +6,7 @@ to handle edge cases and ambiguous situations.
 """
 
 import logging
+from datetime import datetime
 from typing import Optional, Dict, Any
 
 from sqlalchemy.orm import Session
@@ -93,29 +94,35 @@ class CostEstimatorAgent(BaseAgent):
     ) -> CostEstimate:
         """Get base cost estimate from deterministic services."""
         # Calculate base cost
-        cost_estimate = self.pricing_service.calculate_repair_cost(
+        cost_estimate = self.pricing_service.calculate_cost(
+            claim_id=claim.claim_id,
             damage_type=claim.damage_assessment.damage_type,
             severity=claim.damage_assessment.severity,
-            location=claim.damage_assessment.location,
-            vehicle_category="economy",  # Default, should get from vehicle
-            affected_parts=claim.damage_assessment.affected_parts
+            vehicle_category="Standard",  # Default, should get from vehicle context
+            location=claim.return_location,
+            damage_location=claim.damage_assessment.location.value
         )
 
         # Apply depreciation if vehicle context available
-        if vehicle_context and "age_years" in vehicle_context:
-            depreciation_calc = self.depreciation_service.calculate_depreciation(
-                component_type="body_panel",  # Simplified
-                vehicle_age_years=vehicle_context["age_years"],
-                vehicle_mileage_km=vehicle_context.get("mileage_km", 0),
-                new_part_cost=cost_estimate.parts_cost_eur
+        # Note: Simplified - in production would check if depreciation should apply
+        if vehicle_context and "age_years" in vehicle_context and vehicle_context["age_years"] >= 2:
+            component = self.depreciation_service.infer_component_from_location(
+                claim.damage_assessment.location.value
+            )
+
+            depreciation_calc = self.depreciation_service.calculate(
+                vehicle_id=claim.vehicle_id,
+                vehicle_year=datetime.now().year - vehicle_context["age_years"],
+                original_cost_eur=cost_estimate.subtotal_eur,
+                component=component
             )
 
             # Update cost estimate with depreciation
-            cost_estimate.parts_cost_eur = depreciation_calc.customer_pays_eur
-            cost_estimate.total_eur = (
-                cost_estimate.labor_cost_eur +
-                cost_estimate.parts_cost_eur
-            )
+            cost_estimate.depreciation_applicable = True
+            cost_estimate.depreciation_component = component
+            cost_estimate.depreciation_factor = depreciation_calc.depreciation_factor
+            cost_estimate.depreciated_value_eur = depreciation_calc.depreciated_value_eur
+            cost_estimate.total_eur = depreciation_calc.depreciated_value_eur
 
         return cost_estimate
 
